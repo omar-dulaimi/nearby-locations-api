@@ -50,8 +50,8 @@ const make =
   (status: number, type: string, title: string) =>
   (detail?: string, opts: ProblemOpts = {}) =>
     new Problem(status, type, title, detail ?? opts.detail, {
-      instance: opts.instance,
-      extensions: opts.extensions,
+      ...(opts.instance !== undefined ? { instance: opts.instance } : {}),
+      ...(opts.extensions !== undefined ? { extensions: opts.extensions } : {}),
     });
 
 export const badRequest = make(400, '/problems/bad-request', 'Bad Request');
@@ -89,7 +89,7 @@ export function problemFromError(err: unknown, requestId: string, instance?: str
       message: v.message ?? 'invalid',
     }));
     return new Problem(400, '/problems/bad-request', 'Bad Request', 'Request validation failed', {
-      instance,
+      ...(instance !== undefined ? { instance } : {}),
       extensions: { errors },
     });
   }
@@ -97,14 +97,18 @@ export function problemFromError(err: unknown, requestId: string, instance?: str
   const status = typeof e?.statusCode === 'number' ? e.statusCode : 500;
   if (status >= 500) {
     return new Problem(500, '/problems/internal-server-error', 'Internal Server Error', 'An unexpected error occurred', {
-      instance,
+      ...(instance !== undefined ? { instance } : {}),
       extensions: { requestId },
     });
   }
   const title = HTTP_TITLES[status] ?? 'Error';
-  return new Problem(status, `/problems/${title.toLowerCase().replace(/\s+/g, '-')}`, title, e?.message, {
-    instance,
-  });
+  return new Problem(
+    status,
+    `/problems/${title.toLowerCase().replace(/\s+/g, '-')}`,
+    title,
+    e?.message,
+    { ...(instance !== undefined ? { instance } : {}) },
+  );
 }
 
 export function installErrorHandlers(app: FastifyInstance): void {
