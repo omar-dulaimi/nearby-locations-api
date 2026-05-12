@@ -3,7 +3,15 @@ import { InMemoryLocationRepository } from '../../src/repository/in-memory-locat
 import type { Location } from '../../src/domain/location.js';
 
 function loc(id: string, x = 1, y = 1, radius = 1): Location {
-  return { id, name: id, type: 'Restaurant', openingHours: 'h', image: 'https://x', coordinates: { x, y }, radius };
+  return {
+    id,
+    name: id,
+    type: 'Restaurant',
+    openingHours: 'h',
+    image: 'https://x',
+    coordinates: { x, y },
+    radius,
+  };
 }
 
 describe('InMemoryLocationRepository', () => {
@@ -12,7 +20,12 @@ describe('InMemoryLocationRepository', () => {
     expect(repo.count()).toBe(2);
     expect(repo.getById('a')?.id).toBe('a');
     expect(repo.getById('zzz')).toBeUndefined();
-    expect(repo.all().map((l) => l.id).sort()).toEqual(['a', 'b']);
+    expect(
+      repo
+        .all()
+        .map((l) => l.id)
+        .sort(),
+    ).toEqual(['a', 'b']);
   });
   it('upsert inserts then replaces', () => {
     const repo = new InMemoryLocationRepository([]);

@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { Value } from '@sinclair/typebox/value';
-import { RawLocationSchema, rawToLocation, type RawLocation } from '../../src/schemas/raw-location.js';
+import {
+  RawLocationSchema,
+  rawToLocation,
+  type RawLocation,
+} from '../../src/schemas/raw-location.js';
 
 const good: RawLocation = {
   name: 'Da Jia Le',

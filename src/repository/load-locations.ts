@@ -29,7 +29,11 @@ export function loadLocationsFromFile(path: string, opts: LoadOptions): LoadResu
     throw new Error(`Locations file at ${path} is not valid JSON`);
   }
 
-  if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as { locations?: unknown }).locations)) {
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !Array.isArray((parsed as { locations?: unknown }).locations)
+  ) {
     throw new Error(`Locations file at ${path} must be an object with a "locations" array`);
   }
 
@@ -40,7 +44,10 @@ export function loadLocationsFromFile(path: string, opts: LoadOptions): LoadResu
     const row = rows[i];
     if (!Value.Check(RawLocationSchema, row)) {
       skipped++;
-      opts.onWarn?.(`Skipping invalid location at index ${i}`, [...Value.Errors(RawLocationSchema, row)].slice(0, 3));
+      opts.onWarn?.(
+        `Skipping invalid location at index ${i}`,
+        [...Value.Errors(RawLocationSchema, row)].slice(0, 3),
+      );
       continue;
     }
     try {

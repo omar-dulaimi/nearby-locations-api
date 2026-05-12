@@ -23,7 +23,9 @@ export class LocationService {
     const cached = this.cache?.get(key);
     if (cached) return cached;
     const hits = [...this.index.search(point)].sort(
-      (a, b) => a.distance - b.distance || (a.location.id < b.location.id ? -1 : a.location.id > b.location.id ? 1 : 0),
+      (a, b) =>
+        a.distance - b.distance ||
+        (a.location.id < b.location.id ? -1 : a.location.id > b.location.id ? 1 : 0),
     );
     this.cache?.set(key, hits);
     return hits;
