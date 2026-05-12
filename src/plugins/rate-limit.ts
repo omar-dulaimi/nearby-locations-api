@@ -9,14 +9,11 @@ export interface RateLimitPluginOptions {
 }
 
 function keyFor(req: FastifyRequest): string {
-  // Authenticated routes key by user; otherwise by IP. For /auth/token, also fold in the submitted username.
+  // Authenticated routes are keyed by the token subject; everything else (incl. /auth/token) by IP.
+  // (The rate-limit check runs at onRequest, before body parsing, so the request body isn't available
+  // here to fold a submitted username into the key — IP keying is the standard, conservative choice.)
   const user = (req as { user?: { sub?: string } }).user?.sub;
-  if (user) return `user:${user}`;
-  if (req.url.startsWith('/auth/token')) {
-    const username = (req.body as { username?: unknown } | undefined)?.username;
-    return `auth:${req.ip}:${typeof username === 'string' ? username : ''}`;
-  }
-  return `ip:${req.ip}`;
+  return user ? `user:${user}` : `ip:${req.ip}`;
 }
 
 async function plugin(app: FastifyInstance, opts: RateLimitPluginOptions): Promise<void> {
@@ -43,10 +40,9 @@ async function plugin(app: FastifyInstance, opts: RateLimitPluginOptions): Promi
     errorResponseBuilder: (req, ctx) => {
       // Return the Problem instance — Fastify's error handler recognises it via instanceof check
       // and sends it as application/problem+json with status 429.
-      return tooManyRequests(
-        `Rate limit exceeded. Try again in ${Math.ceil(ctx.ttl / 1000)}s`,
-        { instance: req.url },
-      );
+      return tooManyRequests(`Rate limit exceeded. Try again in ${Math.ceil(ctx.ttl / 1000)}s`, {
+        instance: req.url,
+      });
     },
   });
 
