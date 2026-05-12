@@ -13,6 +13,7 @@ import { installErrorHandlers } from './http/problems.js';
 import { healthRoutes } from './http/routes/health.js';
 import { authPlugin } from './plugins/auth.js';
 import { authRoutes } from './http/routes/auth.js';
+import { locationsRoutes } from './http/routes/locations.js';
 
 export interface BuildAppOptions {
   /** Override the logger; tests usually pass `false`. */
@@ -60,7 +61,7 @@ export async function buildApp(
   // --- routes ---
   await app.register(healthRoutes, { service });
   await app.register(authRoutes, { users: config.users, jwtExpiresIn: config.jwtExpiresIn });
-  // await app.register(locationsRoutes, { service });
+  await app.register(locationsRoutes, { service });
 
   return app;
 }
