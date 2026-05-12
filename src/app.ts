@@ -13,6 +13,7 @@ import { installErrorHandlers } from './http/problems.js';
 import { healthRoutes } from './http/routes/health.js';
 import { authPlugin } from './plugins/auth.js';
 import { rateLimitPlugin } from './plugins/rate-limit.js';
+import { httpCachePlugin } from './plugins/http-cache.js';
 import { authRoutes } from './http/routes/auth.js';
 import { locationsRoutes } from './http/routes/locations.js';
 
@@ -56,8 +57,8 @@ export async function buildApp(
     jwtExpiresIn: config.jwtExpiresIn,
   });
   await app.register(rateLimitPlugin, { config });
+  await app.register(httpCachePlugin);
   // await app.register(swaggerPlugin);
-  // await app.register(httpCachePlugin);
 
   // --- routes ---
   await app.register(healthRoutes, { service });
