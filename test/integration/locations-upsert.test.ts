@@ -96,6 +96,18 @@ describe('PUT /locations/:id', () => {
       ).statusCode,
     ).toBe(400);
   });
+  it('rejects a pattern-valid but out-of-range coordinate with 400 (not 500)', async () => {
+    // "x=<huge>" matches the coordinate regex but is past Number.MAX_SAFE_INTEGER:
+    // it must be reported as a client error, not crash the handler.
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/locations/${NEW_ID}`,
+      headers: auth(tokens.writer),
+      payload: { ...body(NEW_ID), coordinates: 'x=999999999999999999999,y=1' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toMatchObject({ status: 400, title: 'Bad Request' });
+  });
   it('requires a token (401) and the writer role (403)', async () => {
     expect(
       (

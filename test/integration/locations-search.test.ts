@@ -48,6 +48,7 @@ describe('GET /locations/search', () => {
       '/locations/search?x=3&y=-1',
       '/locations/search?x=1.5&y=2',
       '/locations/search?x=a&y=2',
+      '/locations/search?x=99999999999999999999999999&y=2', // past Number.MAX_SAFE_INTEGER
     ]) {
       const res = await app.inject({ method: 'GET', url, headers: auth(tokens.reader) });
       expect(res.statusCode, url).toBe(400);

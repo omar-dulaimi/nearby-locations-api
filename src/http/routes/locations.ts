@@ -1,5 +1,10 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { formatCoordinates, roundDistance } from '../../domain/coordinates.js';
+import {
+  formatCoordinates,
+  InvalidCoordinatesError,
+  roundDistance,
+} from '../../domain/coordinates.js';
+import type { Location } from '../../domain/location.js';
 import { toDetailView, toSearchView } from '../../domain/location.js';
 import { rawToLocation } from '../../schemas/raw-location.js';
 import type { LocationService } from '../../service/location-service.js';
@@ -106,7 +111,15 @@ export const locationsRoutes: FastifyPluginAsyncTypebox<LocationsRoutesOptions> 
           instance: req.url,
         });
       }
-      const location = rawToLocation(req.body);
+      let location: Location;
+      try {
+        location = rawToLocation(req.body);
+      } catch (err) {
+        if (err instanceof InvalidCoordinatesError) {
+          throw badRequest(err.message, { instance: req.url });
+        }
+        throw err;
+      }
       const { created } = service.upsert(location);
       reply.code(created ? 201 : 200);
       if (created) reply.header('Location', `/locations/${location.id}`);

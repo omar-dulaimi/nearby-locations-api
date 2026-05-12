@@ -4,8 +4,13 @@ import { UuidStringSchema } from './common.js';
 
 const CoordinateStringSchema = Type.String({ pattern: COORDINATE_PATTERN });
 
+// Coordinates are non-negative integers; bound the upper end at the JS safe-integer
+// limit so a value AJV still considers an "integer" (e.g. 1e24) can't slip through and
+// produce a coordinate string outside the documented "x=N,y=N" form.
+const CoordinateValueSchema = Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER });
+
 export const SearchQuerySchema = Type.Object(
-  { x: Type.Integer({ minimum: 0 }), y: Type.Integer({ minimum: 0 }) },
+  { x: CoordinateValueSchema, y: CoordinateValueSchema },
   { additionalProperties: false },
 );
 
