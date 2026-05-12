@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.planning/
+*.docx
+.~lock.*#
+.DS_Store
+*.log
+*.tsbuildinfo
