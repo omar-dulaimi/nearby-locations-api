@@ -1,0 +1,8 @@
+{
+  "locations": [
+    { "name": "Good A", "type": "Restaurant", "id": "00000000-0000-4000-8000-00000000000a", "opening-hours": "10:00AM-10:00PM", "image": "https://x", "coordinates": "x=1,y=1", "radius": 1 },
+    { "name": "Bad radius", "type": "Restaurant", "id": "00000000-0000-4000-8000-00000000000b", "opening-hours": "10:00AM-10:00PM", "image": "https://x", "coordinates": "x=1,y=1", "radius": 0 },
+    { "name": "Good C", "type": "Restaurant", "id": "00000000-0000-4000-8000-00000000000c", "opening-hours": "10:00AM-10:00PM", "image": "https://x", "coordinates": "x=2,y=2", "radius": 2 },
+    { "name": "Bad coords", "type": "Restaurant", "id": "00000000-0000-4000-8000-00000000000d", "opening-hours": "10:00AM-10:00PM", "image": "https://x", "coordinates": "nope", "radius": 1 }
+  ]
+}

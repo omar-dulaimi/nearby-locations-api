@@ -1,0 +1,8 @@
+{
+  "locations": [
+    { "name": "Good", "type": "Restaurant", "id": "00000000-0000-4000-8000-00000000000a", "opening-hours": "h", "image": "https://x", "coordinates": "x=1,y=1", "radius": 1 },
+    { "name": "Bad1" },
+    { "name": "Bad2", "radius": -3 },
+    { "name": "Bad3", "coordinates": "x=1" }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "locations": [
+    { "name": "R1", "type": "Restaurant", "id": "00000000-0000-4000-8000-000000000001", "opening-hours": "10:00AM-10:00PM", "image": "https://tinyurl.com", "coordinates": "x=1,y=1", "radius": 1 },
+    { "name": "R2", "type": "Restaurant", "id": "00000000-0000-4000-8000-000000000002", "opening-hours": "10:00AM-10:00PM", "image": "https://tinyurl.com", "coordinates": "x=2,y=2", "radius": 2 },
+    { "name": "R3", "type": "Restaurant", "id": "00000000-0000-4000-8000-000000000003", "opening-hours": "10:00AM-10:00PM", "image": "https://tinyurl.com", "coordinates": "x=5,y=5", "radius": 1 },
+    { "name": "R4", "type": "Restaurant", "id": "00000000-0000-4000-8000-000000000004", "opening-hours": "10:00AM-10:00PM", "image": "https://tinyurl.com", "coordinates": "x=2,y=3", "radius": 5 },
+    { "name": "Da Jia Le", "type": "Restaurant", "id": "51e1545c-8b65-4d83-82f9-7fcad4a23111", "opening-hours": "10:00AM-11:00PM", "image": "https://tinyurl.com", "coordinates": "x=8,y=8", "radius": 8 }
+  ]
+}
