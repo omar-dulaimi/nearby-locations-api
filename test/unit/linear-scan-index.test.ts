@@ -3,7 +3,15 @@ import { LinearScanIndex } from '../../src/spatial/linear-scan-index.js';
 import type { Location } from '../../src/domain/location.js';
 
 function loc(id: string, x: number, y: number, radius: number): Location {
-  return { id, name: id, type: 'Restaurant', openingHours: '10:00AM-11:00PM', image: 'https://x', coordinates: { x, y }, radius };
+  return {
+    id,
+    name: id,
+    type: 'Restaurant',
+    openingHours: '10:00AM-11:00PM',
+    image: 'https://x',
+    coordinates: { x, y },
+    radius,
+  };
 }
 
 const worked: Location[] = [
@@ -17,7 +25,10 @@ describe('LinearScanIndex', () => {
   it('returns locations whose disk contains the point (worked example)', () => {
     const idx = new LinearScanIndex();
     idx.bulkLoad(worked);
-    const ids = idx.search({ x: 3, y: 2 }).map((h) => h.location.id).sort();
+    const ids = idx
+      .search({ x: 3, y: 2 })
+      .map((h) => h.location.id)
+      .sort();
     expect(ids).toEqual(['#2', '#4']);
   });
   it('includes the boundary case distance == radius', () => {

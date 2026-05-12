@@ -35,7 +35,9 @@ export class GridIndex implements LocationIndex {
 
   upsert(location: Location): void {
     if (location.radius > this.cellSize) {
-      const all = [...this.placed.values()].map((p) => p.location).filter((l) => l.id !== location.id);
+      const all = [...this.placed.values()]
+        .map((p) => p.location)
+        .filter((l) => l.id !== location.id);
       all.push(location);
       this.bulkLoad(all);
       return;

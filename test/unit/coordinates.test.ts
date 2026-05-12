@@ -14,7 +14,17 @@ describe('parseCoordinates', () => {
     expect(parseCoordinates('x=1234567,y=987654')).toEqual({ x: 1234567, y: 987654 });
   });
   it('rejects malformed / negative / non-integer strings', () => {
-    for (const bad of ['', 'x=1', 'y=1,x=1', 'x=-1,y=2', 'x=1.5,y=2', 'x= 1,y=2', 'foo', 'x=a,y=b', 'x=1,y=2 ']) {
+    for (const bad of [
+      '',
+      'x=1',
+      'y=1,x=1',
+      'x=-1,y=2',
+      'x=1.5,y=2',
+      'x= 1,y=2',
+      'foo',
+      'x=a,y=b',
+      'x=1,y=2 ',
+    ]) {
       expect(() => parseCoordinates(bad)).toThrow(InvalidCoordinatesError);
     }
   });
