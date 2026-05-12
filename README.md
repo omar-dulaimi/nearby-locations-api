@@ -152,6 +152,8 @@ curl -s "http://localhost:3000/locations/search?x=3&y=2" \
 }
 ```
 
+> _Abbreviated — for the point `(3,2)` the bundled seed file (`data/locations.json`) returns several in-range locations; the full response lists them all, sorted by `distance` ascending._
+
 **3. Get a location by id**
 
 ```bash
@@ -204,7 +206,7 @@ curl -s "http://localhost:3000/locations/search?x=1&y=1"
   "type": "/problems/unauthorized",
   "title": "Unauthorized",
   "status": 401,
-  "detail": "No Authorization was found in request.headers",
+  "detail": "A valid bearer token is required",
   "instance": "/locations/search?x=1&y=1"
 }
 ```
@@ -228,6 +230,7 @@ curl -s -X PUT "http://localhost:3000/locations/00000000-0000-0000-0000-00000000
   "type": "/problems/forbidden",
   "title": "Forbidden",
   "status": 403,
+  "detail": "Requires the \"writer\" role",
   "instance": "/locations/00000000-0000-0000-0000-000000000001"
 }
 ```
@@ -352,8 +355,7 @@ datastore; the `LocationRepository` interface makes that a single-class change.
 
 **Production path.** The natural next step (listed under "what I'd do with more time") is a
 `PostgresLocationRepository` backed by PostgreSQL + PostGIS, using `ST_DWithin` with a GiST spatial
-index for the per-location-radius containment query. That plugs directly into the existing interface
-without touching the service or HTTP layers. A production deployment would add: read replicas for
+index for the per-location-radius containment query — or, equivalently, Elasticsearch with a `geo_distance` query over `geo_point` fields (backed by BKD-tree indexes). Either plugs directly into the existing interface without touching the service or HTTP layers. A production deployment would add: read replicas for
 horizontal read throughput; a Redis cache for shared search results and rate-limit counters across
 instances; stateless application instances behind a load balancer; and, if the coordinate space ever
 needed to be distributed across shards, a geohashing scheme such as H3 or S2 cells to partition
@@ -540,7 +542,7 @@ user list helpers.
 
 **Integration tests** exercise every endpoint via `fastify.inject` (no real network): happy-path
 responses with correct shapes and status codes; 400 on invalid query params and malformed UUIDs;
-401 on missing / invalid / expired tokens; 403 on insufficient role; 404 on unknown ids; 429 on
+401 on missing / invalid tokens; 403 on insufficient role; 404 on unknown ids; 429 on
 rate-limit breach; the auth token flow; `PUT` create-then-replace semantics (201 → `Location`
 header → 200 on repeat); id-mismatch 400; search result sorting and tie-breaking; the OpenAPI
 document structure; `ETag` and `Cache-Control` headers; rate-limiter configuration; and an
