@@ -7,7 +7,10 @@ export async function healthRoutes(
 ): Promise<void> {
   app.get(
     '/health',
-    { config: { rateLimitTier: 'global', cacheControl: 'public, max-age=10' } },
+    {
+      schema: { tags: ['system'] },
+      config: { rateLimitTier: 'global', cacheControl: 'public, max-age=10' },
+    },
     async () => ({
       status: 'ok',
       locationsLoaded: opts.service.count(),
