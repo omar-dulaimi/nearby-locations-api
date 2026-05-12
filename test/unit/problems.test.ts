@@ -28,7 +28,10 @@ describe('problem factories', () => {
       instance: '/x',
       extensions: { errors: [{ field: 'x', message: 'required' }] },
     });
-    expect(p.toJSON()).toMatchObject({ status: 400, errors: [{ field: 'x', message: 'required' }] });
+    expect(p.toJSON()).toMatchObject({
+      status: 400,
+      errors: [{ field: 'x', message: 'required' }],
+    });
   });
   it('cover the common statuses', () => {
     expect(unauthorized('nope').status).toBe(401);
@@ -45,7 +48,9 @@ describe('problemFromError', () => {
   });
   it('maps a Fastify validation error to a 400 with an errors member', () => {
     const err = Object.assign(new Error('body must have required property name'), {
-      validation: [{ instancePath: '/name', message: 'is required', keyword: 'required', params: {} }],
+      validation: [
+        { instancePath: '/name', message: 'is required', keyword: 'required', params: {} },
+      ],
       validationContext: 'body',
     });
     const p = problemFromError(err, 'req-1', '/locations/abc');

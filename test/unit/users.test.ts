@@ -24,7 +24,9 @@ describe('defaultUsers', () => {
 describe('parseUsersFromEnv', () => {
   it('parses a valid JSON array', () => {
     const json = JSON.stringify([{ username: 'a', role: 'writer', passwordHash: 'aa:bb' }]);
-    expect(parseUsersFromEnv(json)).toEqual([{ username: 'a', role: 'writer', passwordHash: 'aa:bb' }]);
+    expect(parseUsersFromEnv(json)).toEqual([
+      { username: 'a', role: 'writer', passwordHash: 'aa:bb' },
+    ]);
   });
   it('throws on bad JSON or bad shape', () => {
     expect(() => parseUsersFromEnv('not json')).toThrow();

@@ -96,10 +96,16 @@ export function problemFromError(err: unknown, requestId: string, instance?: str
 
   const status = typeof e?.statusCode === 'number' ? e.statusCode : 500;
   if (status >= 500) {
-    return new Problem(500, '/problems/internal-server-error', 'Internal Server Error', 'An unexpected error occurred', {
-      ...(instance !== undefined ? { instance } : {}),
-      extensions: { requestId },
-    });
+    return new Problem(
+      500,
+      '/problems/internal-server-error',
+      'Internal Server Error',
+      'An unexpected error occurred',
+      {
+        ...(instance !== undefined ? { instance } : {}),
+        extensions: { requestId },
+      },
+    );
   }
   const title = HTTP_TITLES[status] ?? 'Error';
   return new Problem(

@@ -1,4 +1,5 @@
 import type { Role } from '../auth/users.js';
+import type { onRequestHookHandler } from 'fastify';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -9,8 +10,8 @@ declare module '@fastify/jwt' {
 
 declare module 'fastify' {
   interface FastifyInstance {
-    authenticate: import('fastify').onRequestHookHandler;
-    requireRole: (role: Role) => import('fastify').onRequestHookHandler;
+    authenticate: onRequestHookHandler;
+    requireRole: (role: Role) => onRequestHookHandler;
   }
   // Per-route config keys read by the rate-limit and http-cache plugins.
   interface FastifyContextConfig {

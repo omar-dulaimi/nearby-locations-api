@@ -34,7 +34,8 @@ function int(env: Env, key: string, dflt: number): number {
   const v = env[key];
   if (v === undefined || v === '') return dflt;
   const n = Number(v);
-  if (!Number.isInteger(n) || n < 0) throw new Error(`Invalid integer for ${key}: ${JSON.stringify(v)}`);
+  if (!Number.isInteger(n) || n < 0)
+    throw new Error(`Invalid integer for ${key}: ${JSON.stringify(v)}`);
   return n;
 }
 function num(env: Env, key: string, dflt: number): number {

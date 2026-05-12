@@ -12,9 +12,13 @@ async function makeApp() {
     sub: req.user.sub,
     role: req.user.role,
   }));
-  app.put('/writers-only', { onRequest: [app.authenticate, app.requireRole('writer')] }, async () => ({
-    ok: true,
-  }));
+  app.put(
+    '/writers-only',
+    { onRequest: [app.authenticate, app.requireRole('writer')] },
+    async () => ({
+      ok: true,
+    }),
+  );
   await app.ready();
   return app;
 }
