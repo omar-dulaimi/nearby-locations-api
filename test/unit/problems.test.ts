@@ -71,5 +71,6 @@ describe('problemFromError', () => {
     const p = problemFromError(new Error('kaboom secret stack'), 'req-1');
     expect(p.status).toBe(500);
     expect(p.toJSON().detail).not.toContain('secret');
+    expect(p.toJSON()).toMatchObject({ requestId: 'req-1' });
   });
 });
