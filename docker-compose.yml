@@ -1,0 +1,17 @@
+services:
+  api:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-please-change-me}
+      LOG_LEVEL: info
+    # To run against PostgreSQL instead of the in-memory store, uncomment the postgres service
+    # below, set LOCATIONS_BACKEND=postgres and DATABASE_URL, and add `depends_on: [postgres]`.
+  # postgres:
+  #   image: postgis/postgis:16-3.4
+  #   environment:
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: locations
+  #   ports: ['5432:5432']
