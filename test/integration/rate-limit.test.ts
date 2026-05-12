@@ -43,8 +43,16 @@ describe('rate limiting', () => {
     expect(res.headers['retry-after']).toBeDefined();
   });
   it('the auth endpoint has its own (strict) limit', async () => {
-    await app.inject({ method: 'POST', url: '/auth/token', payload: { username: 'x', password: 'y' } });
-    await app.inject({ method: 'POST', url: '/auth/token', payload: { username: 'x', password: 'y' } });
+    await app.inject({
+      method: 'POST',
+      url: '/auth/token',
+      payload: { username: 'x', password: 'y' },
+    });
+    await app.inject({
+      method: 'POST',
+      url: '/auth/token',
+      payload: { username: 'x', password: 'y' },
+    });
     const res = await app.inject({
       method: 'POST',
       url: '/auth/token',

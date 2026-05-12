@@ -13,7 +13,10 @@ describe('OpenAPI', () => {
     for (const p of ['/auth/token', '/locations/search', '/locations/{id}', '/health']) {
       expect(Object.keys(doc.paths), p).toContain(p);
     }
-    expect(doc.components?.securitySchemes?.bearerAuth).toMatchObject({ type: 'http', scheme: 'bearer' });
+    expect(doc.components?.securitySchemes?.bearerAuth).toMatchObject({
+      type: 'http',
+      scheme: 'bearer',
+    });
     // PUT /locations/{id} should declare bearer security.
     expect(doc.paths['/locations/{id}'].put.security).toEqual([{ bearerAuth: [] }]);
   });
