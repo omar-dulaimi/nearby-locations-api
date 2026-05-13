@@ -85,7 +85,11 @@ Copy `.env.example` to `.env` and edit as needed. The server loads `.env` automa
 | `SEARCH_CACHE_SIZE`           | `500`                       | In-process LRU entries for search results; `0` disables                                    |
 | `DATABASE_URL`                | _(unset)_                   | `postgres://…` — only used when `LOCATIONS_BACKEND=postgres`                               |
 
-> **Tip — two seed datasets.** The repo ships with two sample files. The default is `./data/locations_big.json` (10 000 auto-generated records named `"Location #0"`, `"Location #1"`, … — useful for exercising the spatial index at scale). The smaller `./data/locations.json` contains 10 hand-named records (Mantra Restaurant, Da Jia Le, etc.) and is what the curl walkthrough below uses. To run those examples, point at the small file: `LOCATIONS_FILE=./data/locations.json npm run dev` (or set it in `.env`).
+> **Tip — two seed datasets.** The repo ships with two sample files. The default is `./data/locations_big.json` (10 000 auto-generated records named `"Location #0"`, `"Location #1"`, … — useful for exercising the spatial index at scale). The smaller `./data/locations.json` contains 10 hand-named records (Mantra Restaurant, Da Jia Le, etc.) and is what the curl walkthrough below uses. Three ways to switch, in order of "least invasive":
+>
+> 1. **Inline for one run:** `LOCATIONS_FILE=./data/locations.json npm run dev`
+> 2. **In `.env`** (auto-loaded by `dotenv` — copy from `.env.example`): set `LOCATIONS_FILE=./data/locations.json`.
+> 3. **Edit the default in `src/config.ts`** — find the `LOCATIONS_FILE` line in `loadConfig` and change the fallback path. Quickest if you're just poking around locally and don't want to deal with env vars; just remember it's a code change.
 
 ### Demo credentials
 
