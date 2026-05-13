@@ -5,6 +5,8 @@ export async function healthRoutes(
   app: FastifyInstance,
   opts: { service: LocationService },
 ): Promise<void> {
+  app.get('/', { schema: { hide: true } }, (_req, reply) => reply.redirect('/docs', 302));
+
   app.get(
     '/health',
     {

@@ -12,3 +12,11 @@ describe('GET /health', () => {
     expect(res.json()).toEqual({ status: 'ok', locationsLoaded: 5 }); // sample fixture has 5
   });
 });
+
+describe('GET /', () => {
+  it('redirects to /docs', async () => {
+    const res = await app.inject({ method: 'GET', url: '/' });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/docs');
+  });
+});
