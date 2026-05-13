@@ -19,10 +19,10 @@ export const authRoutes: FastifyPluginAsyncTypebox<AuthRoutesOptions> = async (a
         tags: ['auth'],
         summary: 'Issue a JWT for the given credentials',
         description:
-          'Exchanges username + password for a signed HS256 JWT carrying a `role` claim ' +
-          '(TTL configurable via `JWT_EXPIRES_IN`, default `1h`). The returned ' +
-          '`access_token` should be sent in the `Authorization: Bearer …` header on every ' +
-          'request to a protected endpoint.\n\n' +
+          'Issues a signed HS256 JWT in exchange for valid credentials. The token carries a ' +
+          '`role` claim and has a configurable TTL (`JWT_EXPIRES_IN`, default `1h`). The ' +
+          'returned `access_token` should be sent in the `Authorization: Bearer …` header on ' +
+          'every request to a protected endpoint.\n\n' +
           '**Demo accounts** (active when the `AUTH_USERS` env var is unset):\n' +
           '- `reader` / `reader-secret` — read-only role\n' +
           '- `writer` / `writer-secret` — read + write role (required for `PUT /locations/{id}`)',
