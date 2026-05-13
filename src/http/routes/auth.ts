@@ -24,7 +24,7 @@ export const authRoutes: FastifyPluginAsyncTypebox<AuthRoutesOptions> = async (a
           'returned `access_token` should be sent in the Authorization: Bearer … header on ' +
           'every request to a protected endpoint.\n\n' +
           '**Demo accounts** (active when the `AUTH_USERS` env var is unset):\n' +
-          '- `reader` / `reader-secret` — read-only role\n' +
+          '- `reader` / `reader-secret` — read-only role\n\n' +
           '- `writer` / `writer-secret` — read + write role (required for `PUT /locations/{id}`)',
         body: AuthTokenBodySchema,
         response: {
