@@ -85,6 +85,8 @@ Copy `.env.example` to `.env` and edit as needed. The server loads `.env` automa
 | `SEARCH_CACHE_SIZE`           | `500`                   | In-process LRU entries for search results; `0` disables                                    |
 | `DATABASE_URL`                | _(unset)_               | `postgres://…` — only used when `LOCATIONS_BACKEND=postgres`                               |
 
+> **Tip — try the bigger seed file.** The repo ships with two sample datasets: the default `./data/locations.json` (10 hand-named records, used by the curl walkthrough below) and `./data/locations_big.json` (10 000 auto-generated records, useful for exercising the spatial index at scale). To load the larger one, set `LOCATIONS_FILE=./data/locations_big.json` in `.env` or inline: `LOCATIONS_FILE=./data/locations_big.json npm run dev`. The records there are named `"Location #0"`, `"Location #1"`, … — the named-record examples in the walkthrough below (Mantra etc.) won't be present, so switch back to the default file when running those.
+
 ### Demo credentials
 
 When `AUTH_USERS` is not set the server starts with two throwaway demo accounts:
