@@ -4,9 +4,10 @@ export interface Coordinates {
 }
 
 export class InvalidCoordinatesError extends Error {
-  constructor(value: string) {
+  constructor(value: string, reason: string) {
     super(
-      `Invalid coordinates string: ${JSON.stringify(value)} (expected "x=<non-negative-int>,y=<non-negative-int>")`,
+      `Invalid coordinates string: ${JSON.stringify(value)} — ${reason} ` +
+        `(expected "x=<int>,y=<int>" with each value between 0 and ${Number.MAX_SAFE_INTEGER})`,
     );
     this.name = 'InvalidCoordinatesError';
   }
@@ -16,11 +17,12 @@ const COORDS_RE = /^x=(\d+),y=(\d+)$/;
 
 export function parseCoordinates(value: string): Coordinates {
   const m = COORDS_RE.exec(value);
-  if (!m) throw new InvalidCoordinatesError(value);
+  // The regex (\d+) already rejects negatives, decimals, signs, and whitespace.
+  if (!m) throw new InvalidCoordinatesError(value, 'wrong format');
   const x = Number(m[1]);
   const y = Number(m[2]);
-  if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y) || x < 0 || y < 0) {
-    throw new InvalidCoordinatesError(value);
+  if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y)) {
+    throw new InvalidCoordinatesError(value, 'value out of safe integer range');
   }
   return { x, y };
 }

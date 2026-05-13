@@ -15,7 +15,21 @@ export const RawLocationSchema = Type.Object(
     coordinates: Type.String({ pattern: COORDINATE_PATTERN }),
     radius: Type.Integer({ minimum: 1 }),
   },
-  { additionalProperties: false, $id: 'RawLocation' },
+  {
+    additionalProperties: false,
+    $id: 'RawLocation',
+    examples: [
+      {
+        name: 'Mantra Restaurant',
+        type: 'Restaurant',
+        id: '19e1545c-8b65-4d83-82f9-7fcad4a23114',
+        'opening-hours': '10:00AM-10:00PM',
+        image: 'https://tinyurl.com',
+        coordinates: 'x=2,y=2',
+        radius: 2,
+      },
+    ],
+  },
 );
 
 export type RawLocation = Static<typeof RawLocationSchema>;

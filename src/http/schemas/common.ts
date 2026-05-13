@@ -11,4 +11,7 @@ export const ProblemSchema = Type.Object(
   { additionalProperties: true, $id: 'Problem' },
 );
 
-export const UuidStringSchema = Type.String({ format: 'uuid' });
+export const UuidStringSchema = Type.String({
+  format: 'uuid',
+  examples: ['19e1545c-8b65-4d83-82f9-7fcad4a23114'],
+});
