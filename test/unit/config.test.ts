@@ -11,7 +11,7 @@ describe('loadConfig', () => {
     expect(c.host).toBe('0.0.0.0');
     expect(c.nodeEnv).toBe('development');
     expect(c.logLevel).toBe('info');
-    expect(c.locationsFile).toBe('./data/locations.json');
+    expect(c.locationsFile).toBe('./data/locations_big.json');
     expect(c.locationsBackend).toBe('memory');
     expect(c.jwtExpiresIn).toBe('1h');
     expect(c.rateLimits.write).toEqual({ max: 20, timeWindow: '1 minute' });

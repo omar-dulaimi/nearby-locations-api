@@ -68,7 +68,7 @@ export function loadConfig(env: Env): Config {
     host: str(env, 'HOST', '0.0.0.0'),
     nodeEnv,
     logLevel: str(env, 'LOG_LEVEL', 'info'),
-    locationsFile: str(env, 'LOCATIONS_FILE', './data/locations.json'),
+    locationsFile: str(env, 'LOCATIONS_FILE', './data/locations_big.json'),
     locationsBackend: backend,
     jwtSecret:
       secretFromEnv && secretFromEnv !== '' ? secretFromEnv : 'dev-insecure-secret-change-me',

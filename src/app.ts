@@ -44,7 +44,10 @@ export async function buildApp(
     abortInvalidFraction: config.loadInvalidFractionAbort,
     onWarn: (msg, detail) => app.log.warn({ detail }, msg),
   });
-  app.log.info({ total, loaded: loaded.length, skipped }, 'locations loaded');
+  app.log.info(
+    { file: config.locationsFile, total, loaded: loaded.length, skipped },
+    'locations loaded',
+  );
   const repo: LocationRepository = new InMemoryLocationRepository(loaded);
   const index = new GridIndex();
   const cache =
