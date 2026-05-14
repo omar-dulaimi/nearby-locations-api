@@ -4,6 +4,14 @@ import { locations, type LocationRow } from '../db/schema.js';
 import type { Location } from '../domain/location.js';
 import type { LocationRepository } from './location-repository.js';
 
+/**
+ * Cap on the rows-per-INSERT for `seed()`. PostgreSQL's wire protocol limits a single
+ * prepared statement to 65,535 bound parameters; with 8 columns per row that's a hard
+ * ceiling of 8,191 rows per batch. 8,000 leaves comfortable headroom and divides
+ * `data/locations_big.json` (10,000 rows) into two batches.
+ */
+const SEED_BATCH_SIZE = 8000;
+
 export class PostgresLocationRepository implements LocationRepository {
   constructor(private readonly db: NodePgDatabase) {}
 
@@ -40,12 +48,11 @@ export class PostgresLocationRepository implements LocationRepository {
   }
 
   /** Bulk-insert. Used by the seed-on-empty path; much faster than N individual upserts.
-   *  Batched to stay within PostgreSQL's 65535-parameter limit (8 params × 8000 rows = 64000). */
+   *  Batched to stay within PostgreSQL's 65,535-parameter limit (see `SEED_BATCH_SIZE`). */
   async seed(rows: Location[]): Promise<void> {
     if (rows.length === 0) return;
-    const BATCH_SIZE = 8000; // 8 columns × 8000 = 64000 params, safely under the 65535 pg limit
-    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-      const batch = rows.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < rows.length; i += SEED_BATCH_SIZE) {
+      const batch = rows.slice(i, i + SEED_BATCH_SIZE);
       const values = batch.map((loc) => ({
         id: loc.id,
         name: loc.name,
