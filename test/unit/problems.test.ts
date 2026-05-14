@@ -8,6 +8,7 @@ import {
   forbidden,
   tooManyRequests,
   internal,
+  unavailable,
   problemFromError,
 } from '../../src/http/problems.js';
 
@@ -38,6 +39,9 @@ describe('problem factories', () => {
     expect(forbidden('nope').status).toBe(403);
     expect(tooManyRequests('slow down').status).toBe(429);
     expect(internal().status).toBe(500);
+  });
+  it('serviceUnavailable returns 503', () => {
+    expect(unavailable('db not reachable').status).toBe(503);
   });
 });
 

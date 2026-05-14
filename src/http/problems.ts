@@ -61,6 +61,7 @@ export const notFound = make(404, '/problems/not-found', 'Not Found');
 export const tooManyRequests = make(429, '/problems/too-many-requests', 'Too Many Requests');
 export const internal = (detail = 'An unexpected error occurred', opts: ProblemOpts = {}) =>
   new Problem(500, '/problems/internal-server-error', 'Internal Server Error', detail, opts);
+export const unavailable = make(503, '/problems/service-unavailable', 'Service Unavailable');
 
 const HTTP_TITLES: Record<number, string> = {
   400: 'Bad Request',
@@ -72,6 +73,7 @@ const HTTP_TITLES: Record<number, string> = {
   413: 'Payload Too Large',
   415: 'Unsupported Media Type',
   429: 'Too Many Requests',
+  503: 'Service Unavailable',
 };
 
 interface ValidationItem {
