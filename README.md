@@ -334,7 +334,7 @@ The `geom` column is a `geometry(Point)` generated from `(x, y)` (`GENERATED ALW
 ### Tests and quality checks
 
 ```bash
-npm test                  # vitest run (~90 tests)
+npm test                  # vitest run (~120 tests; spins a postgis container via testcontainers)
 npm run test:coverage     # with v8 coverage report
 npm run lint              # eslint
 npm run typecheck         # tsc --noEmit

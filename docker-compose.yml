@@ -10,11 +10,6 @@ services:
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret-change-me}
       LOG_LEVEL: info
-    # To run against PostgreSQL instead of the in-memory store, uncomment the postgres service
-    # below, set LOCATIONS_BACKEND=postgres and DATABASE_URL, and add `depends_on: [postgres]`.
-  # postgres:
-  #   image: postgis/postgis:16-3.4
-  #   environment:
-  #     POSTGRES_PASSWORD: postgres
-  #     POSTGRES_DB: locations
-  #   ports: ['5432:5432']
+    # For PostgreSQL + PostGIS mode, layer on docker-compose.postgres.yml — either via
+    # `npm run compose:postgres` or
+    # `docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build`.
