@@ -588,9 +588,36 @@ the linear scan grows with dataset size and is most pronounced when queries are 
 small region of the coordinate space; for end-to-end numbers against the 10 000-row dataset see
 the [Benchmarks](#benchmarks) section.
 
-**Skew caveat.** If many locations cluster in the same cell, that cell's scan degrades toward O(its
-population). Mitigations include adaptive or hierarchical cell sizing (quadtree / k-d tree) or
-moving to a GiST-indexed PostGIS column for very large or skewed datasets.
+**Skew caveats.** Two distributions can erode the grid's per-query constant, and they degrade it
+in different ways:
+
+- **Density skew** — many locations clustered in the same cell. The 9-cell scan still runs, but
+  the cells themselves are heavy: that cell's contribution to per-query work degrades toward
+  O(its population). Mitigations: a hierarchical scheme that subdivides hot cells (quadtree /
+  k-d tree), or a per-cell cap that spills overflow into a sibling structure.
+- **Radius skew** — one outlier location with a much larger `radius` than the rest forces
+  `cellSize = max(radius)` upward (the invariant on which the 3×3 scan's correctness depends),
+  which makes every cell across the whole grid coarser. The scan still returns the right answer —
+  the rebuild-on-growth path in `upsert` keeps the invariant intact — but each cell now holds
+  proportionally more candidates, so _every_ query (not just queries near the outlier) does more
+  work. This is the failure mode this specific design is most exposed to. Three concrete
+  mitigations, in increasing order of effort:
+  1. **Tiered grids.** Bucket locations by radius and maintain one grid per tier, each with its
+     own cell size proportional to that tier's max radius. A query unions the per-tier 3×3 scans.
+     The outlier ends up alone in the coarsest tier and stops pessimising fine-cell queries.
+  2. **Reach-bbox inverted index.** Insert each location into every fine cell its reach disk
+     overlaps, so a query becomes "look up the cell containing Q and return its contents."
+     Truly O(small _k_) per query, at the cost of O((r / cellSize)²) index entries per location
+     and a more involved upsert/remove path.
+  3. **R-tree / quadtree.** A hierarchical structure that handles both skews natively. Strongest
+     of the three, at the cost of a heavier implementation and weaker cache locality than a flat
+     grid in the common case.
+
+For genuinely skewed real-world data the cleanest answer is to run the service in postgres mode:
+the functional GiST index on `ST_Expand(geom, radius)` indexes each row's reach bounding box
+independently, so a single outlier radius inflates only that one row's index entry, not the whole
+tree. See [Datasource and scalability](#datasource-and-scalability) and
+[Benchmarks](#benchmarks).
 
 ### Handling a `PUT` whose radius exceeds the cell size
 
