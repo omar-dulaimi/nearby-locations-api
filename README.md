@@ -69,7 +69,7 @@ Copy `.env.example` to `.env` and edit as needed. The server loads `.env` automa
 | `NODE_ENV`                    | `development`               | Set to `production` in deployed environments                                                              |
 | `LOG_LEVEL`                   | `info`                      | `trace` / `debug` / `info` / `warn` / `error`                                                             |
 | `LOCATIONS_FILE`              | `./data/locations_big.json` | Path to the seed data file                                                                                |
-| `LOCATIONS_BACKEND`           | `memory`                    | `memory` or `postgres` (stretch)                                                                          |
+| `LOCATIONS_BACKEND`           | `memory`                    | `memory` or `postgres` — picks the repository + index pair                                                |
 | `LOAD_INVALID_FRACTION_ABORT` | `0.5`                       | Abort startup if this fraction of records are invalid                                                     |
 | `JWT_SECRET`                  | _(dev fallback)_            | **Required in production**; otherwise a documented dev fallback is used and a `warn` is logged at startup |
 | `JWT_EXPIRES_IN`              | `1h`                        | Any [ms](https://github.com/vercel/ms) string                                                             |
