@@ -1,6 +1,9 @@
+name: nearby-locations-api
+
 services:
   api:
     build: .
+    image: nearby-locations-api:latest
     ports:
       - '3000:3000'
     environment:
