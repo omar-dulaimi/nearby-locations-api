@@ -8,19 +8,19 @@ export class InMemoryLocationRepository implements LocationRepository {
     for (const l of initial) this.byId.set(l.id, l);
   }
 
-  getById(id: string): Location | undefined {
+  async getById(id: string): Promise<Location | undefined> {
     return this.byId.get(id);
   }
 
-  upsert(location: Location): void {
+  async upsert(location: Location): Promise<void> {
     this.byId.set(location.id, location);
   }
 
-  all(): Location[] {
+  async all(): Promise<Location[]> {
     return [...this.byId.values()];
   }
 
-  count(): number {
+  async count(): Promise<number> {
     return this.byId.size;
   }
 }

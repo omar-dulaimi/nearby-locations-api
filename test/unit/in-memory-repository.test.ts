@@ -15,29 +15,24 @@ function loc(id: string, x = 1, y = 1, radius = 1): Location {
 }
 
 describe('InMemoryLocationRepository', () => {
-  it('starts with the initial locations', () => {
+  it('starts with the initial locations', async () => {
     const repo = new InMemoryLocationRepository([loc('a'), loc('b')]);
-    expect(repo.count()).toBe(2);
-    expect(repo.getById('a')?.id).toBe('a');
-    expect(repo.getById('zzz')).toBeUndefined();
-    expect(
-      repo
-        .all()
-        .map((l) => l.id)
-        .sort(),
-    ).toEqual(['a', 'b']);
+    expect(await repo.count()).toBe(2);
+    expect((await repo.getById('a'))?.id).toBe('a');
+    expect(await repo.getById('zzz')).toBeUndefined();
+    expect((await repo.all()).map((l) => l.id).sort()).toEqual(['a', 'b']);
   });
-  it('upsert inserts then replaces', () => {
+  it('upsert inserts then replaces', async () => {
     const repo = new InMemoryLocationRepository([]);
-    repo.upsert(loc('a', 1, 1, 1));
-    expect(repo.count()).toBe(1);
-    repo.upsert(loc('a', 2, 2, 9));
-    expect(repo.count()).toBe(1);
-    expect(repo.getById('a')).toMatchObject({ coordinates: { x: 2, y: 2 }, radius: 9 });
+    await repo.upsert(loc('a', 1, 1, 1));
+    expect(await repo.count()).toBe(1);
+    await repo.upsert(loc('a', 2, 2, 9));
+    expect(await repo.count()).toBe(1);
+    expect(await repo.getById('a')).toMatchObject({ coordinates: { x: 2, y: 2 }, radius: 9 });
   });
-  it('all() returns a copy (mutating it does not affect the repo)', () => {
+  it('all() returns a snapshot (mutating it does not affect the repo)', async () => {
     const repo = new InMemoryLocationRepository([loc('a')]);
-    repo.all().push(loc('b'));
-    expect(repo.count()).toBe(1);
+    (await repo.all()).push(loc('b'));
+    expect(await repo.count()).toBe(1);
   });
 });
