@@ -425,16 +425,37 @@ in-app cache + rate limits off):
 
 **What this measures.** The in-process `GridIndex` wins by ~4× on hot-path latency because the
 index lives inside the Node process — no socket round-trip, no protocol marshalling, no separate
-query planner. The PostGIS query itself runs in ~0.18 ms (measured with `EXPLAIN ANALYZE` once the
-functional index on `ST_Expand(geom, radius)` is in place — see
-[`drizzle/migrations/0001_reach_index.sql`](drizzle/migrations/0001_reach_index.sql) and the
-[Datasource and scalability](#datasource-and-scalability) section); almost all of the ~4 ms delta
-is `pg.Pool` round-trip, libpq wire format, and JSON marshalling, not the spatial query. Postgres
-still sustains ~8 k RPS on a single container with a single pool — comfortably above realistic
-read traffic — and in exchange you get persistence, ACID, replication, and the freedom to write
-ad-hoc spatial queries the original index was never designed for. Absolute numbers will vary with
-hardware; the relative shape (~3-4× gap, dominated by IPC overhead rather than the search itself)
-is the durable finding.
+query planner. The PostGIS query itself runs in **~0.18 ms** — here is `EXPLAIN ANALYZE` for the
+exact `GET /locations/search?x=1000&y=1000` query against the 10 000-row dataset, with the
+functional index on `ST_Expand(geom, radius)` in place (see
+[`drizzle/migrations/0001_reach_index.sql`](drizzle/migrations/0001_reach_index.sql)):
+
+```text
+EXPLAIN ANALYZE
+SELECT id, name
+FROM locations
+WHERE ST_Expand(geom, radius) && ST_MakePoint(1000, 1000)
+  AND ST_DWithin(geom, ST_MakePoint(1000, 1000), radius);
+
+                                                           QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using locations_reach_gix on locations  (cost=0.15..20.67 rows=1 width=48) (actual time=0.126..0.149 rows=4 loops=1)
+   Index Cond: (st_expand(geom, (radius)::double precision) && '01010000000000000000408F400000000000408F40'::geometry)
+   Filter: st_dwithin(geom, '01010000000000000000408F400000000000408F40'::geometry, (radius)::double precision)
+ Planning Time: 5.244 ms
+ Execution Time: 0.178 ms
+```
+
+`Index Scan using locations_reach_gix` is the proof the functional index is doing the work; the
+`Index Cond` is the `&&` bbox prefilter on `ST_Expand(geom, radius)`, and `ST_DWithin` runs only
+as the exact recheck on the small candidate set. Almost all of the ~4 ms delta between the
+in-memory and Postgres lines in the table above is therefore `pg.Pool` round-trip, libpq wire
+format, and JSON marshalling — not the spatial query. Postgres still sustains ~8 k RPS on a
+single container with a single pool — comfortably above realistic read traffic — and in exchange
+you get persistence, ACID, replication, and the freedom to write ad-hoc spatial queries the
+original index was never designed for. Absolute numbers will vary with hardware; the relative
+shape (~3-4× gap, dominated by IPC overhead rather than the search itself) is the durable
+finding.
 
 ---
 
