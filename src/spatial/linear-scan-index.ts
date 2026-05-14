@@ -4,6 +4,7 @@ import { euclideanDistance } from '../domain/coordinates.js';
 import type { IndexHit, LocationIndex } from './location-index.js';
 
 export class LinearScanIndex implements LocationIndex {
+  readonly needsBootstrap = true;
   private readonly byId = new Map<string, Location>();
 
   bulkLoad(locations: Location[]): void {

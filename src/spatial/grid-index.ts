@@ -22,6 +22,7 @@ interface Placed {
  * the brief, and writes are rate-limited; a rebuild of N entries is O(N)).
  */
 export class GridIndex implements LocationIndex {
+  readonly needsBootstrap = true;
   private cellSize = 1;
   private cells = new Map<string, Location[]>();
   private placed = new Map<string, Placed>();
