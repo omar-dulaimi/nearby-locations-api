@@ -284,8 +284,52 @@ curl http://localhost:3000/health
 { "status": "ok", "locationsLoaded": 10000 }
 ```
 
-To switch to PostgreSQL (stretch), uncomment the `postgres` service in `docker-compose.yml`, set
-`LOCATIONS_BACKEND=postgres` and `DATABASE_URL`, then add `depends_on: [postgres]` under `api`.
+### Postgres mode
+
+The repo ships with a complete PostgreSQL + PostGIS backend, opt-in via the `LOCATIONS_BACKEND=postgres` env var. A Docker Compose overlay (`docker-compose.postgres.yml`) brings up a `postgis/postgis:16-3.4` container alongside the api, and the api auto-applies its migrations and auto-seeds the table from `LOCATIONS_FILE` on first boot.
+
+```bash
+npm run compose:postgres
+# equivalent to:
+# docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+```
+
+The api waits for the postgres healthcheck before starting, so the migration step never races the DB coming up. On a fresh database the boot log shows:
+
+```
+INFO: migrations applied
+INFO: locations seeded
+    file: "./data/locations_big.json"
+    total: 10000
+    loaded: 10000
+    skipped: 0
+    seeded: 10000
+```
+
+Subsequent restarts skip the seed (a non-zero `count(*)` is treated as "already populated"). `/health` in postgres mode includes a `db: "ok"` field and returns `503` (problem+json) if the database is unreachable.
+
+**Schema management.**
+
+- New columns or tables: add them to `src/db/schema.ts`, then `npm run db:generate` produces a fresh migration file under `drizzle/migrations/`. Review the generated SQL and commit it.
+- Standalone migration run (outside the app): set `DATABASE_URL` and run `npm run db:migrate`. Useful for the "real prod" pattern where migrations are a discrete deployment step rather than running at app boot. In this repo, boot-time `migrate()` is kept for the demo-friendly UX.
+
+**Inspecting the database.**
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml exec postgres \
+  psql -U locations -d locations -c '\dt'
+```
+
+**The query that runs `GET /locations/search` in postgres mode** (for reference):
+
+```sql
+SELECT id, name, type, opening_hours, image, x, y, radius,
+       ST_Distance(geom, ST_MakePoint($1, $2)) AS distance
+FROM locations
+WHERE ST_DWithin(geom, ST_MakePoint($1, $2), radius);
+```
+
+The `geom` column is a `geometry(Point)` generated from `(x, y)` (`GENERATED ALWAYS AS … STORED`) and indexed with GiST. `ST_DWithin` uses the GiST index for a bounding-box pre-filter, then PostGIS runs the exact distance check.
 
 ### Tests and quality checks
 
@@ -398,15 +442,7 @@ coordinates, an integer radius, a few short strings for name/type/hours/image). 
 standard Node heap. Beyond a few million records it would be appropriate to move to an external
 datastore; the `LocationRepository` interface makes that a single-class change.
 
-**Production path.** The natural next step (listed under "what I'd do with more time") is a
-`PostgresLocationRepository` backed by PostgreSQL + PostGIS, using `ST_DWithin` with a GiST spatial
-index for the per-location-radius containment query — or, equivalently, Elasticsearch with a `geo_distance` query over `geo_point` fields (backed by BKD-tree indexes). Either plugs directly into the existing interface without touching the service or HTTP layers. A production deployment would add: read replicas for
-horizontal read throughput; a Redis cache for shared search results and rate-limit counters across
-instances; stateless application instances behind a load balancer; and, if the coordinate space ever
-needed to be distributed across shards, a geohashing scheme such as H3 or S2 cells to partition
-the spatial index horizontally. The `LOCATIONS_BACKEND`/`DATABASE_URL` configuration knobs and a
-commented `postgres` service in `docker-compose.yml` are already in place as the seam for this
-extension.
+**Production path (now implemented).** Setting `LOCATIONS_BACKEND=postgres` switches in a `PostgresLocationRepository` and `PostgresLocationIndex` that share a Drizzle-managed `pg.Pool`. The schema lives in `src/db/schema.ts`; the hand-written initial migration in `drizzle/migrations/0000_init.sql` creates the `locations` table with a generated `geom geometry(Point)` column and a GiST index, plus the PostGIS extension. `GET /locations/search` runs `ST_DWithin(geom, ST_MakePoint($1, $2), radius)` — the per-location-radius semantic falls out for free, GiST does the bounding-box pre-filter, exact distance is the recheck. The in-memory `GridIndex` is _not_ instantiated in postgres mode; the database is the index. A docker-compose overlay (`docker-compose.postgres.yml`) brings up `postgis/postgis:16-3.4` alongside the api; migrations and a one-time seed from `LOCATIONS_FILE` run at app boot. In a real deployment you'd add: read replicas; a Redis cache for shared search results and rate-limit counters; stateless application instances behind a load balancer; and, for shard-level horizontal partitioning of the spatial index, an H3 or S2 cell scheme.
 
 ### Search algorithm
 
@@ -597,10 +633,6 @@ in sequence.
 
 ### What I'd do with more time
 
-- **PostgreSQL + PostGIS repository.** A `PostgresLocationRepository` using `ST_DWithin` with a
-  GiST spatial index, wired in via the existing `LOCATIONS_BACKEND=postgres` switch and
-  `DATABASE_URL` config knob. A `postgres` service is already sketched (commented out) in
-  `docker-compose.yml`. A second CI job would run the Postgres-gated integration tests.
 - **Documented benchmark + perf-sanity CI test.** A `scripts/benchmark.ts` that loads
   `data/locations_big.json` (10 000 entries) into both a `GridIndex` and a `LinearScanIndex` and
   times N random queries against each, with numbers pasted into this README. A lightweight
