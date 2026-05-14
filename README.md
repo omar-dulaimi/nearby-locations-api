@@ -62,28 +62,28 @@ npm start            # node dist/server.js
 Copy `.env.example` to `.env` and edit as needed. The server loads `.env` automatically via
 `dotenv`.
 
-| Variable                      | Default                     | Notes                                                                                      |
-| ----------------------------- | --------------------------- | ------------------------------------------------------------------------------------------ |
-| `PORT`                        | `3000`                      |                                                                                            |
-| `HOST`                        | `0.0.0.0`                   |                                                                                            |
-| `NODE_ENV`                    | `development`               | Set to `production` in deployed environments                                               |
-| `LOG_LEVEL`                   | `info`                      | `trace` / `debug` / `info` / `warn` / `error`                                              |
-| `LOCATIONS_FILE`              | `./data/locations_big.json` | Path to the seed data file                                                                 |
-| `LOCATIONS_BACKEND`           | `memory`                    | `memory` or `postgres` (stretch)                                                           |
-| `LOAD_INVALID_FRACTION_ABORT` | `0.5`                       | Abort startup if this fraction of records are invalid                                      |
-| `JWT_SECRET`                  | _(dev fallback)_            | **Required in production** — server refuses to start without it when `NODE_ENV=production` |
-| `JWT_EXPIRES_IN`              | `1h`                        | Any [ms](https://github.com/vercel/ms) string                                              |
-| `AUTH_USERS`                  | _(demo users)_              | JSON array — see below                                                                     |
-| `RATE_LIMIT_WRITE_MAX`        | `20`                        | Max write requests per window                                                              |
-| `RATE_LIMIT_WRITE_WINDOW`     | `1 minute`                  |                                                                                            |
-| `RATE_LIMIT_READ_MAX`         | `120`                       | Max read requests per window                                                               |
-| `RATE_LIMIT_READ_WINDOW`      | `1 minute`                  |                                                                                            |
-| `RATE_LIMIT_AUTH_MAX`         | `10`                        | Max `/auth/token` requests per window                                                      |
-| `RATE_LIMIT_AUTH_WINDOW`      | `1 minute`                  |                                                                                            |
-| `RATE_LIMIT_GLOBAL_MAX`       | `200`                       | Global per-IP fallback                                                                     |
-| `RATE_LIMIT_GLOBAL_WINDOW`    | `1 minute`                  |                                                                                            |
-| `SEARCH_CACHE_SIZE`           | `500`                       | In-process LRU entries for search results; `0` disables                                    |
-| `DATABASE_URL`                | _(unset)_                   | `postgres://…` — only used when `LOCATIONS_BACKEND=postgres`                               |
+| Variable                      | Default                     | Notes                                                                                                     |
+| ----------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `PORT`                        | `3000`                      |                                                                                                           |
+| `HOST`                        | `0.0.0.0`                   |                                                                                                           |
+| `NODE_ENV`                    | `development`               | Set to `production` in deployed environments                                                              |
+| `LOG_LEVEL`                   | `info`                      | `trace` / `debug` / `info` / `warn` / `error`                                                             |
+| `LOCATIONS_FILE`              | `./data/locations_big.json` | Path to the seed data file                                                                                |
+| `LOCATIONS_BACKEND`           | `memory`                    | `memory` or `postgres` (stretch)                                                                          |
+| `LOAD_INVALID_FRACTION_ABORT` | `0.5`                       | Abort startup if this fraction of records are invalid                                                     |
+| `JWT_SECRET`                  | _(dev fallback)_            | **Required in production**; otherwise a documented dev fallback is used and a `warn` is logged at startup |
+| `JWT_EXPIRES_IN`              | `1h`                        | Any [ms](https://github.com/vercel/ms) string                                                             |
+| `AUTH_USERS`                  | _(demo users)_              | JSON array — see below                                                                                    |
+| `RATE_LIMIT_WRITE_MAX`        | `20`                        | Max write requests per window                                                                             |
+| `RATE_LIMIT_WRITE_WINDOW`     | `1 minute`                  |                                                                                                           |
+| `RATE_LIMIT_READ_MAX`         | `120`                       | Max read requests per window                                                                              |
+| `RATE_LIMIT_READ_WINDOW`      | `1 minute`                  |                                                                                                           |
+| `RATE_LIMIT_AUTH_MAX`         | `10`                        | Max `/auth/token` requests per window                                                                     |
+| `RATE_LIMIT_AUTH_WINDOW`      | `1 minute`                  |                                                                                                           |
+| `RATE_LIMIT_GLOBAL_MAX`       | `200`                       | Global per-IP fallback                                                                                    |
+| `RATE_LIMIT_GLOBAL_WINDOW`    | `1 minute`                  |                                                                                                           |
+| `SEARCH_CACHE_SIZE`           | `500`                       | In-process LRU entries for search results; `0` disables                                                   |
+| `DATABASE_URL`                | _(unset)_                   | `postgres://…` — only used when `LOCATIONS_BACKEND=postgres`                                              |
 
 > **Tip — two seed datasets.** The repo ships with two sample files. The default is `./data/locations_big.json` (10 000 auto-generated records named `"Location #0"`, `"Location #1"`, … — useful for exercising the spatial index at scale). The smaller `./data/locations.json` contains 10 hand-named records (Mantra Restaurant, Da Jia Le, etc.) and is what the curl walkthrough below uses. Three ways to switch, in order of "least invasive":
 >
@@ -265,10 +265,16 @@ curl -s "http://localhost:3000/locations/search?x=-1&y=abc" \
 ### Docker
 
 ```bash
-JWT_SECRET=your-secret-here docker compose up --build
+docker compose up --build
 ```
 
-The service starts on port 3000. Verify with:
+The service starts on port 3000. With no `JWT_SECRET` exported on the host, the container falls back to the same `dev-insecure-secret-change-me` value as `npm run dev` and logs a `warn` at startup. For anything beyond a local demo, set it explicitly:
+
+```bash
+JWT_SECRET=your-actual-secret docker compose up --build
+```
+
+Verify with:
 
 ```bash
 curl http://localhost:3000/health
@@ -484,7 +490,7 @@ valid bearer token in the `Authorization` header; `PUT /locations/{id}` addition
 token's `role` claim to equal `writer`. The public endpoints — `/auth/token`, `/health`,
 `/openapi.json`, `/docs` — require no token.
 
-`JWT_SECRET` is required when `NODE_ENV=production`; the server refuses to start without it.
+`JWT_SECRET` is required when `NODE_ENV=production`; the server refuses to start without it. In other environments, a documented dev fallback (`dev-insecure-secret-change-me`, exported as the `DEV_JWT_SECRET_FALLBACK` constant) is used and the server logs a `warn` at startup so it's obvious you're not on a real secret.
 Passwords are hashed with scrypt (`node:crypto`), so the credential check is deliberately slow (a
 brute-force deterrent), which is why the `/auth/token` endpoint has its own strict rate limit.
 
