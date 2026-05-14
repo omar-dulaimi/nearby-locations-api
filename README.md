@@ -13,6 +13,40 @@ coordinate space is.
 
 ---
 
+## Contents
+
+- [Endpoints](#endpoints)
+- [How to run](#how-to-run)
+  - [Prerequisites](#prerequisites)
+  - [Install](#install)
+  - [Development](#development)
+  - [Production-style](#production-style)
+  - [Configuration](#configuration)
+  - [Demo credentials](#demo-credentials)
+  - [curl walkthrough](#curl-walkthrough)
+  - [Docker](#docker)
+  - [Postgres mode](#postgres-mode)
+  - [Tests and quality checks](#tests-and-quality-checks)
+- [API reference](#api-reference)
+- [Benchmarks](#benchmarks)
+- [Technical rationale](#technical-rationale)
+  - [Stack](#stack)
+  - [Validation strategy](#validation-strategy)
+  - [Datasource and scalability](#datasource-and-scalability)
+  - [Search algorithm](#search-algorithm)
+  - [Handling a `PUT` whose radius exceeds the cell size](#handling-a-put-whose-radius-exceeds-the-cell-size)
+  - [Authentication](#authentication)
+  - [Rate limiting](#rate-limiting)
+  - [Caching](#caching)
+  - [Error handling](#error-handling)
+  - [Observability](#observability)
+  - [Testing](#testing)
+  - [What I'd do with more time](#what-id-do-with-more-time)
+- [Project layout](#project-layout)
+- [License](#license)
+
+---
+
 ## Endpoints
 
 | Method | Path                | Auth / role required         |
@@ -357,6 +391,50 @@ All error responses use **RFC 7807 / 9457 Problem Details** with content type
 applicable), and `instance` (the request URL). Validation errors include an `errors` extension
 member — an array of `{ field, message }` objects. Rate-limit responses (429) include a
 `Retry-After` header.
+
+---
+
+## Benchmarks
+
+[`scripts/bench.sh`](scripts/bench.sh) brings up each backend in turn under
+[`docker-compose.bench.yml`](docker-compose.bench.yml) — an overlay that disables the in-app search
+cache (`SEARCH_CACHE_SIZE=0`) and effectively turns off the rate limiter, so the numbers reflect
+the spatial path itself and not the LRU or the limiter. It then hammers `GET /locations/search`
+via [autocannon](https://github.com/mcollina/autocannon) and prints a side-by-side summary parsed
+from autocannon's JSON output.
+
+```bash
+./scripts/bench.sh                                # 30 s @ 50 connections (defaults)
+DURATION=60 CONNECTIONS=100 ./scripts/bench.sh
+QUERY='x=2500&y=2500' ./scripts/bench.sh
+```
+
+Representative run on a developer laptop (Intel Core Ultra 9 285H, 16 cores, 31 GiB RAM,
+WSL2 / Linux 6.6, Docker 29, Node 22; 30 s @ 50 connections, `?x=1000&y=1000`,
+in-app cache + rate limits off):
+
+| Metric         | Memory (`GridIndex`) | Postgres (PostGIS) | Ratio       |
+| -------------- | -------------------- | ------------------ | ----------- |
+| Total requests | **770,000**          | 239,000            | 3.2×        |
+| Avg req/sec    | **25,666**           | 7,961              | 3.2×        |
+| Avg latency    | **1.48 ms**          | 5.79 ms            | 3.9× slower |
+| p50 latency    | **1 ms**             | 6 ms               | —           |
+| p97.5 latency  | **4 ms**             | 10 ms              | —           |
+| p99 latency    | **4 ms**             | 11 ms              | —           |
+| Throughput     | **21.9 MB/s**        | 6.79 MB/s          | 3.2×        |
+
+**What this measures.** The in-process `GridIndex` wins by ~4× on hot-path latency because the
+index lives inside the Node process — no socket round-trip, no protocol marshalling, no separate
+query planner. The PostGIS query itself runs in ~0.18 ms (measured with `EXPLAIN ANALYZE` once the
+functional index on `ST_Expand(geom, radius)` is in place — see
+[`drizzle/migrations/0001_reach_index.sql`](drizzle/migrations/0001_reach_index.sql) and the
+[Datasource and scalability](#datasource-and-scalability) section); almost all of the ~4 ms delta
+is `pg.Pool` round-trip, libpq wire format, and JSON marshalling, not the spatial query. Postgres
+still sustains ~8 k RPS on a single container with a single pool — comfortably above realistic
+read traffic — and in exchange you get persistence, ACID, replication, and the freedom to write
+ad-hoc spatial queries the original index was never designed for. Absolute numbers will vary with
+hardware; the relative shape (~3-4× gap, dominated by IPC overhead rather than the search itself)
+is the durable finding.
 
 ---
 
