@@ -28,11 +28,7 @@ describe('GET /locations/search (postgres backend)', () => {
     const body = res.json();
     expect(body['user-location']).toBe('x=3,y=2');
     // Sample fixture has 5 rows; against (3,2) → R2 (d=1), R4 (d=√2 ≈ 1.41421), Da Jia Le (d=√61 ≈ 7.81025).
-    expect(body.locations.map((l: { name: string }) => l.name)).toEqual([
-      'R2',
-      'R4',
-      'Da Jia Le',
-    ]);
+    expect(body.locations.map((l: { name: string }) => l.name)).toEqual(['R2', 'R4', 'Da Jia Le']);
     expect(body.locations[0].distance).toBe(1);
   });
 
