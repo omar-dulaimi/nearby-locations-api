@@ -331,6 +331,31 @@ the entire dependency tree — including all dev dependencies — which means `n
 Node 22 is available without any build-environment dependencies. This makes the project straightforward
 to clone and run in CI or Docker without toolchain surprises.
 
+### Validation strategy
+
+Validation is **layered, not delegated wholesale to a single library**. TypeBox covers the HTTP/IO boundary; a few places use hand-rolled checks where JSON Schema is the wrong tool. There is no Zod, and that's a deliberate choice (see "Why TypeBox specifically" below).
+
+**Where TypeBox is used.** The same schema does triple duty:
+
+- **Request validation** — every route declares `schema.params` / `querystring` / `body` (`src/http/schemas/*.ts`). Fastify's AJV validates against these and returns an automatic `400`; the error handler maps that into the RFC 7807 Problem shape with an `errors` extension member listing the offending fields.
+- **Response serialisation** — the same `schema.response: { 200: …, 400: … }` is consumed by `fast-json-stringify`, which is faster than `JSON.stringify` *and* catches accidentally-wrong response shapes loudly during development.
+- **OpenAPI generation** — `@fastify/swagger` introspects those same schemas to produce `docs/openapi.json` and `/docs`. One definition, three uses, no drift between runtime, types, and docs.
+- **Seed-file loading** — `Value.Check(RawLocationSchema, row)` in `src/repository/load-locations.ts` validates each record using the *same* schema as `PUT /locations/{id}`. Bad rows are skipped + warned; the wire shape lives in exactly one place (`src/schemas/raw-location.ts`).
+
+**Where validation is hand-rolled, and why.** Each of these is a place JSON Schema is technically capable but produces worse error messages or fits poorly:
+
+- **Env-var parsing** (`src/config.ts`) — env values are all strings. AJV's `coerceTypes` mode can coerce them but the resulting error messages are generic ("must be integer"). The hand-rolled `int()` / `num()` / `str()` / `tier()` helpers produce precise startup errors like `Invalid integer for PORT: "abc"`, which is much faster to diagnose when something's wrong at boot.
+- **`AUTH_USERS` JSON parsing** (`src/auth/users.ts: parseUsersFromEnv`) — same reasoning. The check is small and an error like `AUTH_USERS[2].role must be "reader" or "writer"` beats a JSON Schema validation report.
+- **Domain invariants beyond regex reach** (`src/domain/coordinates.ts`) — the coordinate regex admits any non-negative digit string, but JavaScript can only represent exact integers up to `Number.MAX_SAFE_INTEGER` (≈ 9 × 10¹⁵). The post-regex `Number.isSafeInteger` check throws `InvalidCoordinatesError` with a specific reason (`wrong format` vs `value out of safe integer range`) — far more informative than a JSON Schema `pattern` bound (e.g. `[0-9]{1,16}`) producing a generic "must match pattern" failure.
+- **Cross-field rules** — `PUT /locations/{id}` requires the body's `id` to equal the URL's `id`. JSON Schema can technically express "field A equals field B" via `oneOf` / `if-then`, but it's awkward and the resulting error messages are poor. A one-line handler check that throws `badRequest(...)` produces a clean Problem response and is trivially testable.
+
+**Why TypeBox specifically (and not Zod).**
+
+- TypeBox schemas *are* JSON Schema — exactly what Fastify, `fast-json-stringify`, and `@fastify/swagger` consume natively. Zod would require an adapter (`fastify-type-provider-zod` plus a JSON-Schema converter for OpenAPI); any feature the converter doesn't support silently degrades the doc.
+- AJV is the fastest JSON-Schema validator in Node — schemas are compiled to optimised JS at startup. Zod parses interpretively on every call, which is noticeably slower on hot paths.
+- Static-type ergonomics are comparable — `Static<typeof Schema>` (TypeBox) and `z.infer<typeof Schema>` (Zod) both give you a TS type derived from the schema; for this project's complexity neither has a meaningful DX advantage.
+- Zod *would* be the better pick if we needed heavy use of refinements / transforms (string → Date, base64 → Buffer), if the framework wasn't JSON-Schema-first, or if our validation needs were primarily semantic rather than structural.
+
 ### Datasource and scalability
 
 Location records live in an in-memory `Map`, hydrated from the JSON file once at startup. All query
