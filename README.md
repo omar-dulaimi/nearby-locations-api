@@ -338,9 +338,9 @@ Validation is **layered, not delegated wholesale to a single library**. TypeBox 
 **Where TypeBox is used.** The same schema does triple duty:
 
 - **Request validation** — every route declares `schema.params` / `querystring` / `body` (`src/http/schemas/*.ts`). Fastify's AJV validates against these and returns an automatic `400`; the error handler maps that into the RFC 7807 Problem shape with an `errors` extension member listing the offending fields.
-- **Response serialisation** — the same `schema.response: { 200: …, 400: … }` is consumed by `fast-json-stringify`, which is faster than `JSON.stringify` *and* catches accidentally-wrong response shapes loudly during development.
+- **Response serialisation** — the same `schema.response: { 200: …, 400: … }` is consumed by `fast-json-stringify`, which is faster than `JSON.stringify` _and_ catches accidentally-wrong response shapes loudly during development.
 - **OpenAPI generation** — `@fastify/swagger` introspects those same schemas to produce `docs/openapi.json` and `/docs`. One definition, three uses, no drift between runtime, types, and docs.
-- **Seed-file loading** — `Value.Check(RawLocationSchema, row)` in `src/repository/load-locations.ts` validates each record using the *same* schema as `PUT /locations/{id}`. Bad rows are skipped + warned; the wire shape lives in exactly one place (`src/schemas/raw-location.ts`).
+- **Seed-file loading** — `Value.Check(RawLocationSchema, row)` in `src/repository/load-locations.ts` validates each record using the _same_ schema as `PUT /locations/{id}`. Bad rows are skipped + warned; the wire shape lives in exactly one place (`src/schemas/raw-location.ts`).
 
 **Where validation is hand-rolled, and why.** Each of these is a place JSON Schema is technically capable but produces worse error messages or fits poorly:
 
@@ -351,10 +351,10 @@ Validation is **layered, not delegated wholesale to a single library**. TypeBox 
 
 **Why TypeBox specifically (and not Zod).**
 
-- TypeBox schemas *are* JSON Schema — exactly what Fastify, `fast-json-stringify`, and `@fastify/swagger` consume natively. Zod would require an adapter (`fastify-type-provider-zod` plus a JSON-Schema converter for OpenAPI); any feature the converter doesn't support silently degrades the doc.
+- TypeBox schemas _are_ JSON Schema — exactly what Fastify, `fast-json-stringify`, and `@fastify/swagger` consume natively. Zod would require an adapter (`fastify-type-provider-zod` plus a JSON-Schema converter for OpenAPI); any feature the converter doesn't support silently degrades the doc.
 - AJV is the fastest JSON-Schema validator in Node — schemas are compiled to optimised JS at startup. Zod parses interpretively on every call, which is noticeably slower on hot paths.
 - Static-type ergonomics are comparable — `Static<typeof Schema>` (TypeBox) and `z.infer<typeof Schema>` (Zod) both give you a TS type derived from the schema; for this project's complexity neither has a meaningful DX advantage.
-- Zod *would* be the better pick if we needed heavy use of refinements / transforms (string → Date, base64 → Buffer), if the framework wasn't JSON-Schema-first, or if our validation needs were primarily semantic rather than structural.
+- Zod _would_ be the better pick if we needed heavy use of refinements / transforms (string → Date, base64 → Buffer), if the framework wasn't JSON-Schema-first, or if our validation needs were primarily semantic rather than structural.
 
 ### Datasource and scalability
 
