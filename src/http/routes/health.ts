@@ -15,7 +15,7 @@ export async function healthRoutes(
     },
     async () => ({
       status: 'ok',
-      locationsLoaded: opts.service.count(),
+      locationsLoaded: await opts.service.count(),
     }),
   );
 }

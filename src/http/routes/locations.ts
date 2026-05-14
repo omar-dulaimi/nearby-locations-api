@@ -50,7 +50,7 @@ export const locationsRoutes: FastifyPluginAsyncTypebox<LocationsRoutesOptions> 
     },
     async (req) => {
       const { x, y } = req.query;
-      const hits = service.search({ x, y });
+      const hits = await service.search({ x, y });
       return {
         'user-location': formatCoordinates({ x, y }),
         locations: hits.map((h) => toSearchView(h.location, roundDistance(h.distance))),
@@ -78,7 +78,7 @@ export const locationsRoutes: FastifyPluginAsyncTypebox<LocationsRoutesOptions> 
       },
     },
     async (req) => {
-      const loc = service.getById(req.params.id);
+      const loc = await service.getById(req.params.id);
       if (!loc) throw notFound(`No location with id ${req.params.id}`, { instance: req.url });
       return toDetailView(loc);
     },
@@ -120,7 +120,7 @@ export const locationsRoutes: FastifyPluginAsyncTypebox<LocationsRoutesOptions> 
         }
         throw err;
       }
-      const { created } = service.upsert(location);
+      const { created } = await service.upsert(location);
       reply.code(created ? 201 : 200);
       if (created) reply.header('Location', `/locations/${location.id}`);
       return toDetailView(location);

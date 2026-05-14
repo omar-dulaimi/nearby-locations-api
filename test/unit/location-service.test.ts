@@ -7,7 +7,15 @@ import type { IndexHit } from '../../src/spatial/location-index.js';
 import type { Location } from '../../src/domain/location.js';
 
 function loc(id: string, x: number, y: number, radius: number, name = id): Location {
-  return { id, name, type: 'Restaurant', openingHours: 'h', image: 'https://x', coordinates: { x, y }, radius };
+  return {
+    id,
+    name,
+    type: 'Restaurant',
+    openingHours: 'h',
+    image: 'https://x',
+    coordinates: { x, y },
+    radius,
+  };
 }
 
 async function makeService(initial: Location[], cacheSize = 0) {
@@ -56,7 +64,10 @@ describe('LocationService', () => {
     const r2 = await svc.upsert(loc('a', 1000, 1000, 2, 'A moved'));
     expect(r2).toEqual({ created: false });
     expect((await svc.search({ x: 3, y: 2 })).map((h) => h.location.id)).toEqual(['b']);
-    expect(await svc.getById('a')).toMatchObject({ name: 'A moved', coordinates: { x: 1000, y: 1000 } });
+    expect(await svc.getById('a')).toMatchObject({
+      name: 'A moved',
+      coordinates: { x: 1000, y: 1000 },
+    });
     expect(await svc.count()).toBe(2);
   });
 
