@@ -39,20 +39,25 @@ export class PostgresLocationRepository implements LocationRepository {
     return Number(result[0]?.c ?? 0);
   }
 
-  /** Bulk-insert. Used by the seed-on-empty path; much faster than N individual upserts. */
+  /** Bulk-insert. Used by the seed-on-empty path; much faster than N individual upserts.
+   *  Batched to stay within PostgreSQL's 65535-parameter limit (8 params × 8000 rows = 64000). */
   async seed(rows: Location[]): Promise<void> {
     if (rows.length === 0) return;
-    const values = rows.map((loc) => ({
-      id: loc.id,
-      name: loc.name,
-      type: loc.type,
-      openingHours: loc.openingHours,
-      image: loc.image,
-      x: loc.coordinates.x,
-      y: loc.coordinates.y,
-      radius: loc.radius,
-    }));
-    await this.db.insert(locations).values(values);
+    const BATCH_SIZE = 8000; // 8 columns × 8000 = 64000 params, safely under the 65535 pg limit
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
+      const values = batch.map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        type: loc.type,
+        openingHours: loc.openingHours,
+        image: loc.image,
+        x: loc.coordinates.x,
+        y: loc.coordinates.y,
+        radius: loc.radius,
+      }));
+      await this.db.insert(locations).values(values);
+    }
   }
 }
 

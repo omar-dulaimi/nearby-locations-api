@@ -15,6 +15,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY data ./data
+COPY drizzle ./drizzle
 RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app
 USER app
 EXPOSE 3000

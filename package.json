@@ -20,6 +20,8 @@
     "openapi": "tsx scripts/generate-openapi.ts",
     "openapi:check": "tsx scripts/generate-openapi.ts --check",
     "hash-password": "tsx scripts/hash-password.ts",
+    "compose": "docker compose up --build",
+    "compose:postgres": "docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts"
   },
