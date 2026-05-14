@@ -442,29 +442,30 @@ and is most pronounced when queries are concentrated in a small region of the co
 population). Mitigations include adaptive or hierarchical cell sizing (quadtree / k-d tree) or
 moving to a GiST-indexed PostGIS column for very large or skewed datasets.
 
-### Radius-growth rebuild: design choice 2a vs 2c
+### Handling a `PUT` whose radius exceeds the cell size
 
 When a `PUT` arrives whose `radius` exceeds the current `cellSize`, the 3×3-scan invariant would be
 broken: the new location's disk could reach beyond the neighbouring cells, producing false negatives.
 
-Two options were considered:
+Two designs were on the table:
 
-- **2a (implemented): rebuild the index with the new, larger cell size.** The `upsert` method
+- **Rebuild the index** with a new, larger `cellSize` (the implemented design). The `upsert` method
   detects `radius > cellSize`, collects all existing locations, adds the new one, and calls
-  `bulkLoad` — an O(n) operation.
-- **2c (rejected): maintain a separate overflow list** for locations whose radius exceeds `cellSize`,
-  and scan the overflow list on every query.
+  `bulkLoad` — an O(n) operation on that one write.
+- **Keep an overflow list** alongside the grid for locations whose radius exceeds `cellSize`, and
+  scan that list on every query in addition to the 3×3 block.
 
-**Why 2a.** The brief is explicit that radii are small ("won't be too big") so the rebuild fires
-rarely or never in practice. Write endpoints are rate-limited to 20 requests per minute, capping
-the worst-case rebuild frequency. A rebuild of even 1 million entries takes tens of milliseconds on
-modern hardware — a one-off write-latency blip, not a steady-state throughput cost. The payoff is a
-single data structure with one always-true invariant (`cellSize == max radius`), which makes
-`search`, `insert`, and `remove` all special-case-free and trivially testable. Option 2c would keep
-per-query cost lower on a pathological sequence of expanding-radius writes, but at the cost of
-branching logic in every search and two code paths to maintain and test. If radii were genuinely
-unbounded and the overflow list could grow large, that trade-off would be worth making — and at that
-point the right tool would be an R-tree (`rbush`) or PostGIS `ST_DWithin`.
+**Why rebuild won.** The brief is explicit that radii are small ("won't be too big") so the rebuild
+fires rarely or never in practice. Write endpoints are rate-limited to 20 requests per minute,
+capping the worst-case rebuild frequency. A rebuild of even 1 million entries takes tens of
+milliseconds on modern hardware — a one-off write-latency blip, not a steady-state throughput cost.
+The payoff is a single data structure with one always-true invariant (`cellSize == max radius`),
+which makes `search`, `insert`, and `remove` all special-case-free and trivially testable. The
+overflow-list approach would keep per-query cost lower on a pathological sequence of
+expanding-radius writes, but at the cost of branching logic in every search and two code paths to
+maintain and test. If radii were genuinely unbounded and the overflow list could grow large, that
+trade-off would be worth making — and at that point the right tool would be an R-tree (`rbush`) or
+PostGIS `ST_DWithin`.
 
 ### Authentication
 
