@@ -331,6 +331,14 @@ the entire dependency tree — including all dev dependencies — which means `n
 Node 22 is available without any build-environment dependencies. This makes the project straightforward
 to clone and run in CI or Docker without toolchain surprises.
 
+**npm (over pnpm)** was chosen for the same "clones-and-runs" reason. npm ships with every Node
+install, so a reviewer running `npm ci` after `git clone` works immediately on any machine, in CI,
+or in Docker — no `corepack enable` or `pnpm/action-setup` prerequisite first. pnpm's wins
+(content-addressable disk savings, strict no-phantom-deps resolution, monorepo workspaces, slightly
+faster installs) don't apply to a single-package install-once project, and `actions/setup-node@v4`
+has first-class `cache: npm` support that the CI workflow already uses. For a long-lived
+multi-package project with many developers, pnpm would be the better choice.
+
 ### Validation strategy
 
 Validation is **layered, not delegated wholesale to a single library**. TypeBox covers the HTTP/IO boundary; a few places use hand-rolled checks where JSON Schema is the wrong tool. There is no Zod, and that's a deliberate choice (see "Why TypeBox specifically" below).
