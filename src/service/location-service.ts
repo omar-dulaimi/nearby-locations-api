@@ -13,16 +13,19 @@ export class LocationService {
     private readonly cache?: SearchCache<IndexHit[]>,
   ) {}
 
-  /** Populate the index from the repository. Call once after construction. */
-  bootstrap(): void {
-    this.index.bulkLoad(this.repo.all());
+  /** Populate the index from the repository, if the index needs warm-up. Idempotent. */
+  async bootstrap(): Promise<void> {
+    if (this.index.needsBootstrap) {
+      await this.index.bulkLoad(await this.repo.all());
+    }
   }
 
-  search(point: Coordinates): IndexHit[] {
+  async search(point: Coordinates): Promise<IndexHit[]> {
     const key = `${this.version}:${point.x}:${point.y}`;
     const cached = this.cache?.get(key);
     if (cached) return cached;
-    const hits = [...this.index.search(point)].sort(
+    const raw = await this.index.search(point);
+    const hits = [...raw].sort(
       (a, b) =>
         a.distance - b.distance ||
         (a.location.id < b.location.id ? -1 : a.location.id > b.location.id ? 1 : 0),
@@ -31,14 +34,14 @@ export class LocationService {
     return hits;
   }
 
-  getById(id: string): Location | undefined {
+  async getById(id: string): Promise<Location | undefined> {
     return this.repo.getById(id);
   }
 
-  upsert(location: Location): { created: boolean } {
-    const created = this.repo.getById(location.id) === undefined;
-    this.repo.upsert(location);
-    this.index.upsert(location);
+  async upsert(location: Location): Promise<{ created: boolean }> {
+    const created = (await this.repo.getById(location.id)) === undefined;
+    await this.repo.upsert(location);
+    await this.index.upsert(location);
     this.version++;
     return { created };
   }
@@ -47,7 +50,7 @@ export class LocationService {
     return this.version;
   }
 
-  count(): number {
+  async count(): Promise<number> {
     return this.repo.count();
   }
 }
