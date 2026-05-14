@@ -485,7 +485,7 @@ to clone and run in CI or Docker without toolchain surprises.
 install, so a reviewer running `npm ci` after `git clone` works immediately on any machine, in CI,
 or in Docker — no `corepack enable` or `pnpm/action-setup` prerequisite first. pnpm's wins
 (content-addressable disk savings, strict no-phantom-deps resolution, monorepo workspaces, slightly
-faster installs) don't apply to a single-package install-once project, and `actions/setup-node@v4`
+faster installs) don't apply to a single-package install-once project, and `actions/setup-node@v6`
 has first-class `cache: npm` support that the CI workflow already uses. For a long-lived
 multi-package project with many developers, pnpm would be the better choice.
 
@@ -582,11 +582,11 @@ means that an arbitrarily large coordinate range costs nothing in memory.
 **Linear baseline.** `LinearScanIndex` (`src/spatial/linear-scan-index.ts`) implements the same
 interface with a straightforward O(n) scan. It is kept as a correctness baseline: a randomised
 property test (`test/unit/grid-vs-linear.test.ts`) generates random datasets and queries and
-asserts that `GridIndex` and `LinearScanIndex` return the same results in all cases, including after
-mixed upserts and removes that trigger a radius-growth rebuild. A formal benchmark against the
-10 000-entry `data/locations_big.json` dataset is listed under "what I'd do with more time" (Task
-15.3 of the implementation plan); the grid's advantage over the linear scan grows with dataset size
-and is most pronounced when queries are concentrated in a small region of the coordinate space.
+asserts that `GridIndex` and `LinearScanIndex` return the same results in all cases, including
+after mixed upserts and removes that trigger a radius-growth rebuild. The grid's advantage over
+the linear scan grows with dataset size and is most pronounced when queries are concentrated in a
+small region of the coordinate space; for end-to-end numbers against the 10 000-row dataset see
+the [Benchmarks](#benchmarks) section.
 
 **Skew caveat.** If many locations cluster in the same cell, that cell's scan degrades toward O(its
 population). Mitigations include adaptive or hierarchical cell sizing (quadtree / k-d tree) or
@@ -731,12 +731,24 @@ document structure; `ETag` and `Cache-Control` headers; rate-limiter configurati
 end-to-end smoke test that boots the server with the real seed file and calls all the happy paths
 in sequence.
 
+**Postgres-backed tests** run against a real `postgis/postgis:16-3.4` container spun up by
+[`@testcontainers/postgresql`](https://www.npmjs.com/package/@testcontainers/postgresql) in
+`test/globalSetup.ts`. A `LocationRepository` contract test
+(`test/integration/repository-contract.test.ts`) runs the same assertions against both
+`InMemoryLocationRepository` and `PostgresLocationRepository` so the two implementations stay
+behaviourally identical. `PostgresLocationIndex`, the `/health` DB ping, the bootstrap-on-empty
+seed, and `GET /locations/search` against the live database each get their own integration test
+file. The container is shared across the postgres files and truncated between tests; vitest runs
+the postgres files serially (`fileParallelism: false` in `vitest.config.ts`) to keep the shared
+state predictable.
+
 ### What I'd do with more time
 
-- **Documented benchmark + perf-sanity CI test.** A `scripts/benchmark.ts` that loads
-  `data/locations_big.json` (10 000 entries) into both a `GridIndex` and a `LinearScanIndex` and
-  times N random queries against each, with numbers pasted into this README. A lightweight
-  `test/integration/perf-sanity.test.ts` to catch regressions.
+- **Perf-sanity CI test.** The end-to-end [Benchmarks](#benchmarks) numbers are reproducible on
+  demand via `scripts/bench.sh`, but there is no automated regression guard. A lightweight
+  `test/integration/perf-sanity.test.ts` that asserts `GridIndex` finishes N random queries under
+  a generous wall-clock budget would catch accidental O(n²) reintroductions in CI without making
+  the suite flaky.
 - **`/problems/*` documentation pages** for the Problem `type` URIs, so the links in error
   responses resolve to human-readable descriptions.
 - **CI matrix for Node 20 + 22.**
@@ -749,24 +761,49 @@ in sequence.
 ## Project layout
 
 ```
-src/
-├── auth/           # Password hashing (scrypt) and user-record helpers
-├── cache/          # SearchCache — LRU keyed by data-version
-├── domain/         # Pure domain types and functions (coordinates, location views)
-├── http/
-│   ├── problems    # Problem class, factory helpers, error handler installation
-│   ├── routes/     # Fastify route plugins: auth, health, locations
-│   └── schemas/    # TypeBox HTTP-layer schemas (request/response shapes)
-├── plugins/        # Fastify plugins: auth (JWT), rate-limit, http-cache, swagger
-├── repository/     # LocationRepository interface + InMemoryLocationRepository + JSON loader
-├── schemas/        # Shared raw-location schema (wire format) and AJV format registrations
-├── service/        # LocationService — orchestrates repo, index, and cache
-├── spatial/        # LocationIndex interface, GridIndex, LinearScanIndex
-├── types/          # Fastify type augmentations
-├── app.ts          # App factory (registers plugins and routes)
-├── config.ts       # loadConfig — reads env vars, validates, returns a typed Config
-├── logger.ts       # Pino logger factory
-└── server.ts       # Entry point — loads config, builds app, starts listening
+.
+├── src/
+│   ├── auth/                    # Password hashing (scrypt) + user-record helpers
+│   ├── cache/                   # SearchCache — LRU keyed by data-version
+│   ├── db/                      # Drizzle schema + pg.Pool connection factory (postgres mode)
+│   ├── domain/                  # Pure domain types and functions (coordinates, location views)
+│   ├── http/
+│   │   ├── problems.ts          # Problem class, factory helpers, error handler installation
+│   │   ├── routes/              # Fastify route plugins: auth, health, locations
+│   │   └── schemas/             # TypeBox HTTP-layer schemas (request/response shapes)
+│   ├── plugins/                 # Fastify plugins: auth (JWT), rate-limit, http-cache, swagger
+│   ├── repository/              # LocationRepository interface + InMemory + Postgres impls + JSON loader
+│   ├── schemas/                 # Shared raw-location wire schema + AJV format registrations
+│   ├── service/                 # LocationService — orchestrates repo, index, and cache
+│   ├── spatial/                 # LocationIndex + GridIndex / LinearScanIndex / PostgresLocationIndex
+│   ├── types/                   # Fastify type augmentations
+│   ├── app.ts                   # App factory — forks on LOCATIONS_BACKEND, registers plugins + routes
+│   ├── config.ts                # loadConfig — reads env, validates, returns a typed Config
+│   ├── logger.ts                # Pino logger factory
+│   └── server.ts                # Entry point — loads config, builds app, starts listening
+├── drizzle/migrations/          # Hand-written SQL + drizzle-kit metadata
+│   ├── 0000_init.sql            # locations table + GENERATED geom + PostGIS extension
+│   └── 0001_reach_index.sql     # Functional GiST on ST_Expand(geom, radius) (see Benchmarks)
+├── scripts/
+│   ├── bench.sh                 # Memory-vs-Postgres benchmark (see Benchmarks)
+│   ├── db-migrate.ts            # Standalone migration runner
+│   ├── generate-openapi.ts      # Emits / checks docs/openapi.json from the runtime schemas
+│   └── hash-password.ts         # Generates scrypt password hashes for AUTH_USERS
+├── test/
+│   ├── unit/                    # Unit tests (no Fastify, no DB)
+│   ├── integration/             # fastify.inject end-to-end + testcontainers postgres tests
+│   ├── helpers/                 # Test app builders + postgres testcontainer helper
+│   ├── fixtures/                # Bad / edge JSON inputs for the loader tests
+│   └── globalSetup.ts           # Spins up the shared postgis testcontainer once per run
+├── data/
+│   ├── locations.json           # 5-row worked-example fixture from the spec
+│   └── locations_big.json       # 10 000-row synthetic dataset
+├── docs/openapi.json            # Committed OpenAPI snapshot (regen via scripts/generate-openapi.ts)
+├── .github/workflows/ci.yml     # GitHub Actions — lint, format, typecheck, openapi check, tests
+├── Dockerfile                   # Multi-stage build
+├── docker-compose.yml           # Memory mode
+├── docker-compose.postgres.yml  # Overlay adding PostGIS for postgres mode
+└── docker-compose.bench.yml     # Overlay disabling cache + rate limits for ./scripts/bench.sh
 ```
 
 ---
