@@ -19,7 +19,9 @@
     "test:coverage": "vitest run --coverage",
     "openapi": "tsx scripts/generate-openapi.ts",
     "openapi:check": "tsx scripts/generate-openapi.ts --check",
-    "hash-password": "tsx scripts/hash-password.ts"
+    "hash-password": "tsx scripts/hash-password.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/db-migrate.ts"
   },
   "dependencies": {
     "@fastify/etag": "^6.0.0",
