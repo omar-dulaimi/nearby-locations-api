@@ -326,10 +326,11 @@ docker compose -f docker-compose.yml -f docker-compose.postgres.yml exec postgre
 SELECT id, name, type, opening_hours, image, x, y, radius,
        ST_Distance(geom, ST_MakePoint($1, $2)) AS distance
 FROM locations
-WHERE ST_DWithin(geom, ST_MakePoint($1, $2), radius);
+WHERE ST_Expand(geom, radius) && ST_MakePoint($1, $2)
+  AND ST_DWithin(geom, ST_MakePoint($1, $2), radius);
 ```
 
-The `geom` column is a `geometry(Point)` generated from `(x, y)` (`GENERATED ALWAYS AS … STORED`) and indexed with GiST. `ST_DWithin` uses the GiST index for a bounding-box pre-filter, then PostGIS runs the exact distance check.
+The `geom` column is a `geometry(Point)` generated from `(x, y)` (`GENERATED ALWAYS AS … STORED`). A plain GiST index on `geom` can't accelerate `ST_DWithin(geom, $point, radius)` when the distance comes from a per-row column — the planner has nothing to shrink the candidate set by. The fix (in `drizzle/migrations/0001_reach_index.sql`) is a functional GiST index on `ST_Expand(geom, radius)`: that precomputes each row's reach bbox, so the first clause becomes an indexable `&&` lookup and `ST_DWithin` runs only as the exact recheck on the small candidate set. With the 10 000-row dataset, EXPLAIN ANALYZE shows `Index Scan using locations_reach_gix` and the query executes in ~0.1 ms.
 
 ### Tests and quality checks
 
@@ -442,7 +443,7 @@ coordinates, an integer radius, a few short strings for name/type/hours/image). 
 standard Node heap. Beyond a few million records it would be appropriate to move to an external
 datastore; the `LocationRepository` interface makes that a single-class change.
 
-**Production path (now implemented).** Setting `LOCATIONS_BACKEND=postgres` switches in a `PostgresLocationRepository` and `PostgresLocationIndex` that share a Drizzle-managed `pg.Pool`. The schema lives in `src/db/schema.ts`; the hand-written initial migration in `drizzle/migrations/0000_init.sql` creates the `locations` table with a generated `geom geometry(Point)` column and a GiST index, plus the PostGIS extension. `GET /locations/search` runs `ST_DWithin(geom, ST_MakePoint($1, $2), radius)` — the per-location-radius semantic falls out for free, GiST does the bounding-box pre-filter, exact distance is the recheck. The in-memory `GridIndex` is _not_ instantiated in postgres mode; the database is the index. A docker-compose overlay (`docker-compose.postgres.yml`) brings up `postgis/postgis:16-3.4` alongside the api; migrations and a one-time seed from `LOCATIONS_FILE` run at app boot. In a real deployment you'd add: read replicas; a Redis cache for shared search results and rate-limit counters; stateless application instances behind a load balancer; and, for shard-level horizontal partitioning of the spatial index, an H3 or S2 cell scheme.
+**Production path (now implemented).** Setting `LOCATIONS_BACKEND=postgres` switches in a `PostgresLocationRepository` and `PostgresLocationIndex` that share a Drizzle-managed `pg.Pool`. The schema lives in `src/db/schema.ts`; the hand-written initial migration in `drizzle/migrations/0000_init.sql` creates the `locations` table with a generated `geom geometry(Point)` column plus the PostGIS extension, and `drizzle/migrations/0001_reach_index.sql` adds a functional GiST index on `ST_Expand(geom, radius)`. `GET /locations/search` runs a two-clause query — an indexable `ST_Expand(geom, radius) && $point` bbox prefilter on top of that functional index, with `ST_DWithin(geom, $point, radius)` as the exact recheck — so the per-location-radius semantic falls out of the query and the search stays indexed even though the distance varies per row. The in-memory `GridIndex` is _not_ instantiated in postgres mode; the database is the index. A docker-compose overlay (`docker-compose.postgres.yml`) brings up `postgis/postgis:16-3.4` alongside the api; migrations and a one-time seed from `LOCATIONS_FILE` run at app boot. In a real deployment you'd add: read replicas; a Redis cache for shared search results and rate-limit counters; stateless application instances behind a load balancer; and, for shard-level horizontal partitioning of the spatial index, an H3 or S2 cell scheme.
 
 ### Search algorithm
 
