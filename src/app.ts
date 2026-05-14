@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import type { Config } from './config.js';
+import { type Config, DEV_JWT_SECRET_FALLBACK } from './config.js';
 import { buildLoggerOptions } from './logger.js';
 import { loadLocationsFromFile } from './repository/load-locations.js';
 import { InMemoryLocationRepository } from './repository/in-memory-location-repository.js';
@@ -33,6 +33,12 @@ export async function buildApp(
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   installErrorHandlers(app);
+
+  if (config.jwtSecret === DEV_JWT_SECRET_FALLBACK) {
+    app.log.warn(
+      'JWT_SECRET is unset — using the insecure dev fallback secret. Set JWT_SECRET in your environment for any non-local use.',
+    );
+  }
 
   // --- data + domain wiring (repository is swappable; only "memory" is implemented here) ---
   if (config.locationsBackend !== 'memory') {

@@ -1,6 +1,6 @@
 // test/unit/config.test.ts
 import { describe, it, expect } from 'vitest';
-import { loadConfig } from '../../src/config.js';
+import { DEV_JWT_SECRET_FALLBACK, loadConfig } from '../../src/config.js';
 
 const base = { JWT_SECRET: 'test-secret' };
 
@@ -38,10 +38,9 @@ describe('loadConfig', () => {
     expect(c.rateLimits.write.max).toBe(5);
   });
 
-  it('uses a dev fallback JWT secret in development (and is usable)', () => {
+  it('uses the documented dev fallback JWT secret when JWT_SECRET is unset', () => {
     const c = loadConfig({});
-    expect(typeof c.jwtSecret).toBe('string');
-    expect(c.jwtSecret.length).toBeGreaterThan(0);
+    expect(c.jwtSecret).toBe(DEV_JWT_SECRET_FALLBACK);
   });
 
   it('requires JWT_SECRET when NODE_ENV=production', () => {

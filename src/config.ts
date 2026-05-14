@@ -1,6 +1,9 @@
 import type { UserRecord } from './auth/users.js';
 import { defaultUsers, parseUsersFromEnv } from './auth/users.js';
 
+/** The fallback JWT secret used in development when `JWT_SECRET` is unset. Refused in production. */
+export const DEV_JWT_SECRET_FALLBACK = 'dev-insecure-secret-change-me';
+
 export type RateLimitTier = { max: number; timeWindow: string };
 
 export interface Config {
@@ -70,8 +73,7 @@ export function loadConfig(env: Env): Config {
     logLevel: str(env, 'LOG_LEVEL', 'info'),
     locationsFile: str(env, 'LOCATIONS_FILE', './data/locations_big.json'),
     locationsBackend: backend,
-    jwtSecret:
-      secretFromEnv && secretFromEnv !== '' ? secretFromEnv : 'dev-insecure-secret-change-me',
+    jwtSecret: secretFromEnv && secretFromEnv !== '' ? secretFromEnv : DEV_JWT_SECRET_FALLBACK,
     jwtExpiresIn: str(env, 'JWT_EXPIRES_IN', '1h'),
     users,
     rateLimits: {
