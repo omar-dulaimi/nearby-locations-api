@@ -55,6 +55,10 @@
               "schema": {
                 "additionalProperties": false,
                 "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
                 "properties": {
                   "username": {
                     "minLength": 1,
@@ -64,11 +68,7 @@
                     "minLength": 1,
                     "type": "string"
                   }
-                },
-                "required": [
-                  "username",
-                  "password"
-                ]
+                }
               },
               "example": {
                 "username": "writer",
@@ -84,6 +84,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "access_token",
+                    "token_type",
+                    "expires_in"
+                  ],
                   "properties": {
                     "access_token": {
                       "type": "string"
@@ -97,12 +102,7 @@
                     "expires_in": {
                       "type": "integer"
                     }
-                  },
-                  "required": [
-                    "access_token",
-                    "token_type",
-                    "expires_in"
-                  ]
+                  }
                 }
               }
             }
@@ -114,6 +114,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -130,12 +135,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -147,6 +147,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -163,12 +168,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -180,6 +180,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -196,12 +201,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -249,6 +249,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "user-location",
+                    "locations"
+                  ],
                   "properties": {
                     "user-location": {
                       "pattern": "^x=(0|[1-9][0-9]*),y=(0|[1-9][0-9]*)$",
@@ -258,6 +262,12 @@
                       "type": "array",
                       "items": {
                         "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "coordinates",
+                          "distance"
+                        ],
                         "properties": {
                           "id": {
                             "format": "uuid",
@@ -274,20 +284,10 @@
                           "distance": {
                             "type": "number"
                           }
-                        },
-                        "required": [
-                          "id",
-                          "name",
-                          "coordinates",
-                          "distance"
-                        ]
+                        }
                       }
                     }
-                  },
-                  "required": [
-                    "user-location",
-                    "locations"
-                  ]
+                  }
                 }
               }
             }
@@ -299,6 +299,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -315,12 +320,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -332,6 +332,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -348,12 +353,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -365,6 +365,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -381,12 +386,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -424,6 +424,15 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "name",
+                    "type",
+                    "id",
+                    "opening-hours",
+                    "image",
+                    "coordinates",
+                    "radius"
+                  ],
                   "properties": {
                     "name": {
                       "type": "string"
@@ -450,16 +459,7 @@
                       "minimum": 1,
                       "type": "integer"
                     }
-                  },
-                  "required": [
-                    "name",
-                    "type",
-                    "id",
-                    "opening-hours",
-                    "image",
-                    "coordinates",
-                    "radius"
-                  ]
+                  }
                 }
               }
             }
@@ -471,6 +471,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -487,12 +492,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -504,6 +504,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -520,12 +525,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -537,6 +537,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -553,12 +558,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -570,6 +570,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -586,12 +591,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -610,6 +610,15 @@
               "schema": {
                 "additionalProperties": false,
                 "type": "object",
+                "required": [
+                  "name",
+                  "type",
+                  "id",
+                  "opening-hours",
+                  "image",
+                  "coordinates",
+                  "radius"
+                ],
                 "properties": {
                   "name": {
                     "minLength": 1,
@@ -640,16 +649,7 @@
                     "minimum": 1,
                     "type": "integer"
                   }
-                },
-                "required": [
-                  "name",
-                  "type",
-                  "id",
-                  "opening-hours",
-                  "image",
-                  "coordinates",
-                  "radius"
-                ]
+                }
               },
               "example": {
                 "name": "Mantra Restaurant",
@@ -687,6 +687,15 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "name",
+                    "type",
+                    "id",
+                    "opening-hours",
+                    "image",
+                    "coordinates",
+                    "radius"
+                  ],
                   "properties": {
                     "name": {
                       "type": "string"
@@ -713,16 +722,7 @@
                       "minimum": 1,
                       "type": "integer"
                     }
-                  },
-                  "required": [
-                    "name",
-                    "type",
-                    "id",
-                    "opening-hours",
-                    "image",
-                    "coordinates",
-                    "radius"
-                  ]
+                  }
                 }
               }
             }
@@ -733,6 +733,15 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "name",
+                    "type",
+                    "id",
+                    "opening-hours",
+                    "image",
+                    "coordinates",
+                    "radius"
+                  ],
                   "properties": {
                     "name": {
                       "type": "string"
@@ -759,16 +768,7 @@
                       "minimum": 1,
                       "type": "integer"
                     }
-                  },
-                  "required": [
-                    "name",
-                    "type",
-                    "id",
-                    "opening-hours",
-                    "image",
-                    "coordinates",
-                    "radius"
-                  ]
+                  }
                 }
               }
             }
@@ -780,6 +780,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -796,12 +801,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -813,6 +813,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -829,12 +834,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -846,6 +846,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -862,12 +867,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
@@ -879,6 +879,11 @@
                 "schema": {
                   "additionalProperties": true,
                   "type": "object",
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string"
@@ -895,12 +900,7 @@
                     "instance": {
                       "type": "string"
                     }
-                  },
-                  "required": [
-                    "type",
-                    "title",
-                    "status"
-                  ]
+                  }
                 }
               }
             }
