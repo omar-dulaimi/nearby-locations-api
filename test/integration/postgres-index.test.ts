@@ -77,7 +77,7 @@ describe('PostgresLocationIndex', () => {
     await index.bulkLoad(WORKED);
     await index.upsert(WORKED[0]!);
     await index.remove(WORKED[0]!.id);
-    // Postgres index does NOT reflect any of those operations — the data layer is the repo, not the index.
+    // Postgres index does NOT reflect any of those operations; the data layer is the repo, not the index.
     expect(await index.size()).toBe(0);
   });
 

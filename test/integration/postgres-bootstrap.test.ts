@@ -14,7 +14,7 @@ beforeAll(async () => {
   probe = createTestDb();
   await probe.db.execute(sql`TRUNCATE TABLE locations`);
 
-  // Build the app — its natural bootstrap should seed from the sample fixture (5 rows).
+  // Build the app; its natural bootstrap should seed from the sample fixture (5 rows).
   const harness = await buildTestAppPostgres({ skipReset: true });
   app = harness.app;
   tokens = harness.tokens;

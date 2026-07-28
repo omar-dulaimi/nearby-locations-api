@@ -89,7 +89,7 @@ compose_down docker-compose.yml "$BENCH_OVERLAY"
 
 echo
 echo "════════════════════════════════════════════════════════════════════"
-echo " MEMORY backend — bringing up..."
+echo " MEMORY backend: bringing up..."
 echo "════════════════════════════════════════════════════════════════════"
 compose_up docker-compose.yml "$BENCH_OVERLAY"
 wait_for_api
@@ -103,7 +103,7 @@ compose_down docker-compose.yml "$BENCH_OVERLAY"
 
 echo
 echo "════════════════════════════════════════════════════════════════════"
-echo " POSTGRES backend — bringing up..."
+echo " POSTGRES backend: bringing up..."
 echo "════════════════════════════════════════════════════════════════════"
 compose_up docker-compose.yml docker-compose.postgres.yml "$BENCH_OVERLAY"
 wait_for_api
@@ -139,9 +139,9 @@ const rows = [
   ['Total requests', fmtInt(mem.requests.total),   fmtInt(pg.requests.total),    fmtFloat(mem.requests.total / pg.requests.total) + 'x'],
   ['Avg req/sec',    fmtInt(Math.round(mem.requests.average)), fmtInt(Math.round(pg.requests.average)), fmtFloat(mem.requests.average / pg.requests.average) + 'x'],
   ['Avg latency',    fmtFloat(mem.latency.average) + ' ms', fmtFloat(pg.latency.average) + ' ms', fmtFloat(pg.latency.average / mem.latency.average) + 'x slower'],
-  ['p50 latency',    mem.latency.p50 + ' ms',      pg.latency.p50 + ' ms',       '—'],
-  ['p97.5 latency',  mem.latency.p97_5 + ' ms',    pg.latency.p97_5 + ' ms',     '—'],
-  ['p99 latency',    mem.latency.p99 + ' ms',      pg.latency.p99 + ' ms',       '—'],
+  ['p50 latency',    mem.latency.p50 + ' ms',      pg.latency.p50 + ' ms',       'n/a'],
+  ['p97.5 latency',  mem.latency.p97_5 + ' ms',    pg.latency.p97_5 + ' ms',     'n/a'],
+  ['p99 latency',    mem.latency.p99 + ' ms',      pg.latency.p99 + ' ms',       'n/a'],
   ['Throughput',     mb(mem.throughput.average) + ' MB/s', mb(pg.throughput.average) + ' MB/s', fmtFloat(mem.throughput.average / pg.throughput.average) + 'x'],
 ];
 

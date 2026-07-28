@@ -19,7 +19,7 @@ describe('GET /health (postgres backend)', () => {
   });
 
   it('returns 503 problem if the database is unreachable', async () => {
-    // Close the app's onClose hooks (which drains the pool) — the next /health call should fail.
+    // Close the app's onClose hooks (which drains the pool); the next /health call should fail.
     await app.close();
     // Rebuild with a deliberately-broken DATABASE_URL to simulate "unreachable".
     const harness = await buildTestAppPostgres({

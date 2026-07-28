@@ -42,7 +42,7 @@ export class PostgresLocationIndex implements LocationIndex {
 
   async search(point: Coordinates): Promise<IndexHit[]> {
     // Two-clause query so PostGIS can use the functional GiST index on
-    // ST_Expand(geom, radius) — see drizzle/migrations/0001_reach_index.sql.
+    // ST_Expand(geom, radius): see drizzle/migrations/0001_reach_index.sql.
     // `&&` is the bbox-overlap operator (GiST-indexable); ST_DWithin stays
     // as the exact recheck on the small candidate set.
     const result = await this.db.execute<SearchRow>(sql`

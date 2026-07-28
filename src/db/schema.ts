@@ -9,7 +9,7 @@ export const locations = pgTable('locations', {
   x: integer('x').notNull(),
   y: integer('y').notNull(),
   radius: integer('radius').notNull(),
-  // `geom` is DB-maintained (GENERATED ALWAYS AS) — intentionally not in this schema.
+  // `geom` is DB-maintained (GENERATED ALWAYS AS) and intentionally not in this schema.
   // PostGIS queries use Drizzle's `sql` template tag against it directly.
 });
 

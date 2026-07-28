@@ -23,7 +23,7 @@ async function main(): Promise<void> {
     }
     if (current !== doc) {
       console.error(
-        'docs/openapi.json is out of date — run `npm run openapi` and commit the result.',
+        'docs/openapi.json is out of date. Run `npm run openapi` and commit the result.',
       );
       process.exit(1);
     }

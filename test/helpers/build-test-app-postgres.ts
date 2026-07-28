@@ -12,7 +12,7 @@ const SAMPLE = fileURLToPath(new URL('../fixtures/locations.sample.json', import
 
 export interface TestAppOptions {
   env?: Record<string, string | undefined>;
-  /** When true, the locations table is NOT truncated/reseeded — useful for bootstrap tests that start from an empty DB. */
+  /** When true, the locations table is NOT truncated/reseeded, which is useful for bootstrap tests that start from an empty DB. */
   skipReset?: boolean;
   /** Override individual config fields after loading (e.g. tiny rate limits). */
   patch?: (c: Config) => void;

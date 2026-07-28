@@ -52,7 +52,7 @@ describe('end-to-end', () => {
     });
     expect(put.statusCode).toBe(201);
 
-    // 5. Search again — the new one shows up first (distance 0).
+    // 5. Search again; the new one shows up first (distance 0).
     const s2 = await app.inject({ method: 'GET', url: '/locations/search?x=3&y=2', headers: h });
     const items = s2.json().locations;
     expect(items[0]).toMatchObject({ id, distance: 0 });

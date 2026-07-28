@@ -9,7 +9,7 @@ export interface UserRecord {
 }
 
 // Demo credentials used when AUTH_USERS is not set. Documented in the README and .env.example.
-// (Plaintext here is intentional — these are throwaway demo accounts, not production secrets.)
+// (Plaintext here is intentional: these are throwaway demo accounts, not production secrets.)
 export const DEMO_READER_PASSWORD = 'reader-secret';
 export const DEMO_WRITER_PASSWORD = 'writer-secret';
 

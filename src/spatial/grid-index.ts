@@ -15,7 +15,7 @@ interface Placed {
  * Each location is bucketed into the cell of its centre. Because no location's
  * disk can reach further than `cellSize` from its centre, every location whose
  * disk contains a query point Q has its centre in Q's cell or one of the 8
- * neighbouring cells — so `search` only scans that 3x3 block. No false negatives.
+ * neighbouring cells, so `search` only scans that 3x3 block. No false negatives.
  *
  * A `upsert` whose radius exceeds `cellSize` would break the invariant, so it
  * triggers a full rebuild with the larger cell size (rare: radii are small per

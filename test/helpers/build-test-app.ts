@@ -40,7 +40,7 @@ export async function buildTestApp(opts: TestAppOptions = {}): Promise<TestApp> 
   await app.ready();
 
   // Mint tokens directly via the jwt decorator (available after `ready()` once the auth plugin is registered).
-  // Until the auth plugin exists, these will be empty strings — integration tests that need them run in later phases.
+  // Until the auth plugin exists, these will be empty strings; integration tests that need them run in later phases.
   const tokens = { reader: '', writer: '' };
   if ('jwt' in app) {
     const jwt = (app as unknown as { jwt: { sign: (p: object, o?: object) => string } }).jwt;

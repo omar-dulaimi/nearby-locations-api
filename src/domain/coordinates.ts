@@ -6,7 +6,7 @@ export interface Coordinates {
 export class InvalidCoordinatesError extends Error {
   constructor(value: string, reason: string) {
     super(
-      `Invalid coordinates string: ${JSON.stringify(value)} — ${reason} ` +
+      `Invalid coordinates string: ${JSON.stringify(value)}: ${reason} ` +
         `(expected "x=<int>,y=<int>" with each value between 0 and ${Number.MAX_SAFE_INTEGER})`,
     );
     this.name = 'InvalidCoordinatesError';

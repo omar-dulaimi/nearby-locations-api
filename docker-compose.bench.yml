@@ -1,4 +1,4 @@
-# Benchmark overlay — layers on top of base (memory mode) or base + postgres.
+# Benchmark overlay: layers on top of base (memory mode) or base + postgres.
 # Disables the in-app search cache and rate limits so the numbers reflect the
 # spatial path, not the LRU or the limiter. Used by scripts/bench.sh.
 #

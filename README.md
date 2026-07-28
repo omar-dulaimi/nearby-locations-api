@@ -81,7 +81,7 @@ npm ci
 ### Development
 
 ```bash
-npm run dev          # tsx watch — restarts on source changes
+npm run dev          # tsx watch, restarts on source changes
 ```
 
 ### Production-style
@@ -103,11 +103,11 @@ Copy `.env.example` to `.env` and edit as needed. The server loads `.env` automa
 | `NODE_ENV`                    | `development`               | Set to `production` in deployed environments                                                              |
 | `LOG_LEVEL`                   | `info`                      | `trace` / `debug` / `info` / `warn` / `error`                                                             |
 | `LOCATIONS_FILE`              | `./data/locations_big.json` | Path to the seed data file                                                                                |
-| `LOCATIONS_BACKEND`           | `memory`                    | `memory` or `postgres` — picks the repository + index pair                                                |
+| `LOCATIONS_BACKEND`           | `memory`                    | `memory` or `postgres`; picks the repository + index pair                                                |
 | `LOAD_INVALID_FRACTION_ABORT` | `0.5`                       | Abort startup if this fraction of records are invalid                                                     |
 | `JWT_SECRET`                  | _(dev fallback)_            | **Required in production**; otherwise a documented dev fallback is used and a `warn` is logged at startup |
 | `JWT_EXPIRES_IN`              | `1h`                        | Any [ms](https://github.com/vercel/ms) string                                                             |
-| `AUTH_USERS`                  | _(demo users)_              | JSON array — see below                                                                                    |
+| `AUTH_USERS`                  | _(demo users)_              | JSON array; see below                                                                                    |
 | `RATE_LIMIT_WRITE_MAX`        | `20`                        | Max write requests per window                                                                             |
 | `RATE_LIMIT_WRITE_WINDOW`     | `1 minute`                  |                                                                                                           |
 | `RATE_LIMIT_READ_MAX`         | `120`                       | Max read requests per window                                                                              |
@@ -117,13 +117,13 @@ Copy `.env.example` to `.env` and edit as needed. The server loads `.env` automa
 | `RATE_LIMIT_GLOBAL_MAX`       | `200`                       | Global per-IP fallback                                                                                    |
 | `RATE_LIMIT_GLOBAL_WINDOW`    | `1 minute`                  |                                                                                                           |
 | `SEARCH_CACHE_SIZE`           | `500`                       | In-process LRU entries for search results; `0` disables                                                   |
-| `DATABASE_URL`                | _(unset)_                   | `postgres://…` — only used when `LOCATIONS_BACKEND=postgres`                                              |
+| `DATABASE_URL`                | _(unset)_                   | `postgres://…`; only used when `LOCATIONS_BACKEND=postgres`                                              |
 
-> **Tip — two seed datasets.** The repo ships with two sample files. The default is `./data/locations_big.json` (10 000 auto-generated records named `"Location #0"`, `"Location #1"`, … — useful for exercising the spatial index at scale). The smaller `./data/locations.json` contains 10 hand-named records (Mantra Restaurant, Da Jia Le, etc.) and is what the curl walkthrough below uses. Three ways to switch, in order of "least invasive":
+> **Tip: two seed datasets.** The repo ships with two sample files. The default is `./data/locations_big.json` (10 000 auto-generated records named `"Location #0"`, `"Location #1"`, …; useful for exercising the spatial index at scale). The smaller `./data/locations.json` contains 10 hand-named records (Mantra Restaurant, Da Jia Le, etc.) and is what the curl walkthrough below uses. Three ways to switch, in order of "least invasive":
 >
 > 1. **Inline for one run:** `LOCATIONS_FILE=./data/locations.json npm run dev`
-> 2. **In `.env`** (auto-loaded by `dotenv` — copy from `.env.example`): set `LOCATIONS_FILE=./data/locations.json`.
-> 3. **Edit the default in `src/config.ts`** — find the `LOCATIONS_FILE` line in `loadConfig` and change the fallback path. Quickest if you're just poking around locally and don't want to deal with env vars; just remember it's a code change.
+> 2. **In `.env`** (auto-loaded by `dotenv`; copy from `.env.example`): set `LOCATIONS_FILE=./data/locations.json`.
+> 3. **Edit the default in `src/config.ts`**: find the `LOCATIONS_FILE` line in `loadConfig` and change the fallback path. Quickest if you're just poking around locally and don't want to deal with env vars; just remember it's a code change.
 
 ### Demo credentials
 
@@ -192,7 +192,7 @@ curl -s "http://localhost:3000/locations/search?x=3&y=2" \
 }
 ```
 
-> _Abbreviated — for the point `(3,2)` the bundled seed file (`data/locations.json`) returns several in-range locations; the full response lists them all, sorted by `distance` ascending._
+> _Abbreviated. For the point `(3,2)` the bundled seed file (`data/locations.json`) returns several in-range locations; the full response lists them all, sorted by `distance` ascending._
 
 **3. Get a location by id**
 
@@ -364,7 +364,7 @@ WHERE ST_Expand(geom, radius) && ST_MakePoint($1, $2)
   AND ST_DWithin(geom, ST_MakePoint($1, $2), radius);
 ```
 
-The `geom` column is a `geometry(Point)` generated from `(x, y)` (`GENERATED ALWAYS AS … STORED`). A plain GiST index on `geom` can't accelerate `ST_DWithin(geom, $point, radius)` when the distance comes from a per-row column — the planner has nothing to shrink the candidate set by. The fix (in `drizzle/migrations/0001_reach_index.sql`) is a functional GiST index on `ST_Expand(geom, radius)`: that precomputes each row's reach bbox, so the first clause becomes an indexable `&&` lookup and `ST_DWithin` runs only as the exact recheck on the small candidate set. With the 10 000-row dataset, EXPLAIN ANALYZE shows `Index Scan using locations_reach_gix` and the query executes in ~0.1 ms.
+The `geom` column is a `geometry(Point)` generated from `(x, y)` (`GENERATED ALWAYS AS … STORED`). A plain GiST index on `geom` can't accelerate `ST_DWithin(geom, $point, radius)` when the distance comes from a per-row column, because the planner has nothing to shrink the candidate set by. The fix (in `drizzle/migrations/0001_reach_index.sql`) is a functional GiST index on `ST_Expand(geom, radius)`: that precomputes each row's reach bbox, so the first clause becomes an indexable `&&` lookup and `ST_DWithin` runs only as the exact recheck on the small candidate set. With the 10 000-row dataset, EXPLAIN ANALYZE shows `Index Scan using locations_reach_gix` and the query executes in ~0.1 ms.
 
 ### Tests and quality checks
 
@@ -389,7 +389,7 @@ committed snapshot is [`docs/openapi.json`](docs/openapi.json).
 All error responses use **RFC 7807 / 9457 Problem Details** with content type
 `application/problem+json`. The body always contains `type`, `title`, `status`, `detail` (when
 applicable), and `instance` (the request URL). Validation errors include an `errors` extension
-member — an array of `{ field, message }` objects. Rate-limit responses (429) include a
+member, an array of `{ field, message }` objects. Rate-limit responses (429) include a
 `Retry-After` header.
 
 ---
@@ -397,7 +397,7 @@ member — an array of `{ field, message }` objects. Rate-limit responses (429) 
 ## Benchmarks
 
 [`scripts/bench.sh`](scripts/bench.sh) brings up each backend in turn under
-[`docker-compose.bench.yml`](docker-compose.bench.yml) — an overlay that disables the in-app search
+[`docker-compose.bench.yml`](docker-compose.bench.yml), an overlay that disables the in-app search
 cache (`SEARCH_CACHE_SIZE=0`) and effectively turns off the rate limiter, so the numbers reflect
 the spatial path itself and not the LRU or the limiter. It then hammers `GET /locations/search`
 via [autocannon](https://github.com/mcollina/autocannon) and prints a side-by-side summary parsed
@@ -418,14 +418,14 @@ in-app cache + rate limits off):
 | Total requests | **770,000**          | 239,000            | 3.2×        |
 | Avg req/sec    | **25,666**           | 7,961              | 3.2×        |
 | Avg latency    | **1.48 ms**          | 5.79 ms            | 3.9× slower |
-| p50 latency    | **1 ms**             | 6 ms               | —           |
-| p97.5 latency  | **4 ms**             | 10 ms              | —           |
-| p99 latency    | **4 ms**             | 11 ms              | —           |
+| p50 latency    | **1 ms**             | 6 ms               | n/a         |
+| p97.5 latency  | **4 ms**             | 10 ms              | n/a         |
+| p99 latency    | **4 ms**             | 11 ms              | n/a         |
 | Throughput     | **21.9 MB/s**        | 6.79 MB/s          | 3.2×        |
 
 **What this measures.** The in-process `GridIndex` wins by ~4× on hot-path latency because the
-index lives inside the Node process — no socket round-trip, no protocol marshalling, no separate
-query planner. The PostGIS query itself runs in **~0.18 ms** — here is `EXPLAIN ANALYZE` for the
+index lives inside the Node process: no socket round-trip, no protocol marshalling, no separate
+query planner. The PostGIS query itself runs in **~0.18 ms**. Here is `EXPLAIN ANALYZE` for the
 exact `GET /locations/search?x=1000&y=1000` query against the 10 000-row dataset, with the
 functional index on `ST_Expand(geom, radius)` in place (see
 [`drizzle/migrations/0001_reach_index.sql`](drizzle/migrations/0001_reach_index.sql)):
@@ -450,8 +450,8 @@ WHERE ST_Expand(geom, radius) && ST_MakePoint(1000, 1000)
 `Index Cond` is the `&&` bbox prefilter on `ST_Expand(geom, radius)`, and `ST_DWithin` runs only
 as the exact recheck on the small candidate set. Almost all of the ~4 ms delta between the
 in-memory and Postgres lines in the table above is therefore `pg.Pool` round-trip, libpq wire
-format, and JSON marshalling — not the spatial query. Postgres still sustains ~8 k RPS on a
-single container with a single pool — comfortably above realistic read traffic — and in exchange
+format, and JSON marshalling, not the spatial query. Postgres still sustains ~8 k RPS on a
+single container with a single pool, comfortably above realistic read traffic, and in exchange
 you get persistence, ACID, replication, and the freedom to write ad-hoc spatial queries the
 original index was never designed for. Absolute numbers will vary with hardware; the relative
 shape (~3-4× gap, dominated by IPC overhead rather than the search itself) is the durable
@@ -466,8 +466,8 @@ finding.
 **Fastify 5** was chosen for its first-class JSON Schema validation and serialisation pipeline (via
 Ajv), a mature plugin ecosystem with official plugins for JWT, rate limiting, Swagger, and ETag, and
 good throughput characteristics. It integrates naturally with TypeScript and fits cleanly in a
-project that needs the full lifecycle — request validation, auth hooks, route-level config, response
-serialisation, and OpenAPI generation — without reaching for an application framework.
+project that needs the full lifecycle (request validation, auth hooks, route-level config, response
+serialisation, and OpenAPI generation) without reaching for an application framework.
 
 **TypeBox** (@sinclair/typebox) gives one schema definition that serves three purposes at once: the
 JSON Schema that Fastify/Ajv validates and serialises against, the TypeScript static type inferred
@@ -477,13 +477,13 @@ TypeScript types, and documentation when these are maintained separately.
 
 **Vitest** is the test runner. It shares the TypeScript and ESM config already in the project,
 supports the same import syntax as the source, and has a clean API. There are no native add-ons in
-the entire dependency tree — including all dev dependencies — which means `npm ci` works anywhere
+the entire dependency tree, including all dev dependencies, which means `npm ci` works anywhere
 Node 22 is available without any build-environment dependencies. This makes the project straightforward
 to clone and run in CI or Docker without toolchain surprises.
 
 **npm (over pnpm)** was chosen for the same "clones-and-runs" reason. npm ships with every Node
 install, so a reviewer running `npm ci` after `git clone` works immediately on any machine, in CI,
-or in Docker — no `corepack enable` or `pnpm/action-setup` prerequisite first. pnpm's wins
+or in Docker, with no `corepack enable` or `pnpm/action-setup` prerequisite first. pnpm's wins
 (content-addressable disk savings, strict no-phantom-deps resolution, monorepo workspaces, slightly
 faster installs) don't apply to a single-package install-once project, and `actions/setup-node@v6`
 has first-class `cache: npm` support that the CI workflow already uses. For a long-lived
@@ -495,23 +495,23 @@ Validation is **layered, not delegated wholesale to a single library**. TypeBox 
 
 **Where TypeBox is used.** The same schema does triple duty:
 
-- **Request validation** — every route declares `schema.params` / `querystring` / `body` (`src/http/schemas/*.ts`). Fastify's AJV validates against these and returns an automatic `400`; the error handler maps that into the RFC 7807 Problem shape with an `errors` extension member listing the offending fields.
-- **Response serialisation** — the same `schema.response: { 200: …, 400: … }` is consumed by `fast-json-stringify`, which is faster than `JSON.stringify` _and_ catches accidentally-wrong response shapes loudly during development.
-- **OpenAPI generation** — `@fastify/swagger` introspects those same schemas to produce `docs/openapi.json` and `/docs`. One definition, three uses, no drift between runtime, types, and docs.
-- **Seed-file loading** — `Value.Check(RawLocationSchema, row)` in `src/repository/load-locations.ts` validates each record using the _same_ schema as `PUT /locations/{id}`. Bad rows are skipped + warned; the wire shape lives in exactly one place (`src/schemas/raw-location.ts`).
+- **Request validation**: every route declares `schema.params` / `querystring` / `body` (`src/http/schemas/*.ts`). Fastify's AJV validates against these and returns an automatic `400`; the error handler maps that into the RFC 7807 Problem shape with an `errors` extension member listing the offending fields.
+- **Response serialisation**: the same `schema.response: { 200: …, 400: … }` is consumed by `fast-json-stringify`, which is faster than `JSON.stringify` _and_ catches accidentally-wrong response shapes loudly during development.
+- **OpenAPI generation**: `@fastify/swagger` introspects those same schemas to produce `docs/openapi.json` and `/docs`. One definition, three uses, no drift between runtime, types, and docs.
+- **Seed-file loading**: `Value.Check(RawLocationSchema, row)` in `src/repository/load-locations.ts` validates each record using the _same_ schema as `PUT /locations/{id}`. Bad rows are skipped + warned; the wire shape lives in exactly one place (`src/schemas/raw-location.ts`).
 
 **Where validation is hand-rolled, and why.** Each of these is a place JSON Schema is technically capable but produces worse error messages or fits poorly:
 
-- **Env-var parsing** (`src/config.ts`) — env values are all strings. AJV's `coerceTypes` mode can coerce them but the resulting error messages are generic ("must be integer"). The hand-rolled `int()` / `num()` / `str()` / `tier()` helpers produce precise startup errors like `Invalid integer for PORT: "abc"`, which is much faster to diagnose when something's wrong at boot.
-- **`AUTH_USERS` JSON parsing** (`src/auth/users.ts: parseUsersFromEnv`) — same reasoning. The check is small and an error like `AUTH_USERS[2].role must be "reader" or "writer"` beats a JSON Schema validation report.
-- **Domain invariants beyond regex reach** (`src/domain/coordinates.ts`) — the coordinate regex admits any non-negative digit string, but JavaScript can only represent exact integers up to `Number.MAX_SAFE_INTEGER` (≈ 9 × 10¹⁵). The post-regex `Number.isSafeInteger` check throws `InvalidCoordinatesError` with a specific reason (`wrong format` vs `value out of safe integer range`) — far more informative than a JSON Schema `pattern` bound (e.g. `[0-9]{1,16}`) producing a generic "must match pattern" failure.
-- **Cross-field rules** — `PUT /locations/{id}` requires the body's `id` to equal the URL's `id`. JSON Schema can technically express "field A equals field B" via `oneOf` / `if-then`, but it's awkward and the resulting error messages are poor. A one-line handler check that throws `badRequest(...)` produces a clean Problem response and is trivially testable.
+- **Env-var parsing** (`src/config.ts`): env values are all strings. AJV's `coerceTypes` mode can coerce them but the resulting error messages are generic ("must be integer"). The hand-rolled `int()` / `num()` / `str()` / `tier()` helpers produce precise startup errors like `Invalid integer for PORT: "abc"`, which is much faster to diagnose when something's wrong at boot.
+- **`AUTH_USERS` JSON parsing** (`src/auth/users.ts: parseUsersFromEnv`): same reasoning. The check is small and an error like `AUTH_USERS[2].role must be "reader" or "writer"` beats a JSON Schema validation report.
+- **Domain invariants beyond regex reach** (`src/domain/coordinates.ts`): the coordinate regex admits any non-negative digit string, but JavaScript can only represent exact integers up to `Number.MAX_SAFE_INTEGER` (≈ 9 × 10¹⁵). The post-regex `Number.isSafeInteger` check throws `InvalidCoordinatesError` with a specific reason (`wrong format` vs `value out of safe integer range`), far more informative than a JSON Schema `pattern` bound (e.g. `[0-9]{1,16}`) producing a generic "must match pattern" failure.
+- **Cross-field rules**: `PUT /locations/{id}` requires the body's `id` to equal the URL's `id`. JSON Schema can technically express "field A equals field B" via `oneOf` / `if-then`, but it's awkward and the resulting error messages are poor. A one-line handler check that throws `badRequest(...)` produces a clean Problem response and is trivially testable.
 
 **Why TypeBox specifically (and not Zod).**
 
-- TypeBox schemas _are_ JSON Schema — exactly what Fastify, `fast-json-stringify`, and `@fastify/swagger` consume natively. Zod would require an adapter (`fastify-type-provider-zod` plus a JSON-Schema converter for OpenAPI); any feature the converter doesn't support silently degrades the doc.
-- AJV is the fastest JSON-Schema validator in Node — schemas are compiled to optimised JS at startup. Zod parses interpretively on every call, which is noticeably slower on hot paths.
-- Static-type ergonomics are comparable — `Static<typeof Schema>` (TypeBox) and `z.infer<typeof Schema>` (Zod) both give you a TS type derived from the schema; for this project's complexity neither has a meaningful DX advantage.
+- TypeBox schemas _are_ JSON Schema, exactly what Fastify, `fast-json-stringify`, and `@fastify/swagger` consume natively. Zod would require an adapter (`fastify-type-provider-zod` plus a JSON-Schema converter for OpenAPI); any feature the converter doesn't support silently degrades the doc.
+- AJV is the fastest JSON-Schema validator in Node, and schemas are compiled to optimised JS at startup. Zod parses interpretively on every call, which is noticeably slower on hot paths.
+- Static-type ergonomics are comparable: `Static<typeof Schema>` (TypeBox) and `z.infer<typeof Schema>` (Zod) both give you a TS type derived from the schema; for this project's complexity neither has a meaningful DX advantage.
 - Zod _would_ be the better pick if we needed heavy use of refinements / transforms (string → Date, base64 → Buffer), if the framework wasn't JSON-Schema-first, or if our validation needs were primarily semantic rather than structural.
 
 ### Datasource and scalability
@@ -538,17 +538,17 @@ The brief's "high data volume / high load" requirement is addressed by the combi
 
 **Memory ceiling.** Each location record is a small flat object (UUID string, two integers for
 coordinates, an integer radius, a few short strings for name/type/hours/image). A rough estimate is
-150–300 bytes of heap per record — so 1 million records occupy roughly 150–300 MB, well within a
+150–300 bytes of heap per record, so 1 million records occupy roughly 150–300 MB, well within a
 standard Node heap. Beyond a few million records it would be appropriate to move to an external
 datastore; the `LocationRepository` interface makes that a single-class change.
 
-**Production path (now implemented).** Setting `LOCATIONS_BACKEND=postgres` switches in a `PostgresLocationRepository` and `PostgresLocationIndex` that share a Drizzle-managed `pg.Pool`. The schema lives in `src/db/schema.ts`; the hand-written initial migration in `drizzle/migrations/0000_init.sql` creates the `locations` table with a generated `geom geometry(Point)` column plus the PostGIS extension, and `drizzle/migrations/0001_reach_index.sql` adds a functional GiST index on `ST_Expand(geom, radius)`. `GET /locations/search` runs a two-clause query — an indexable `ST_Expand(geom, radius) && $point` bbox prefilter on top of that functional index, with `ST_DWithin(geom, $point, radius)` as the exact recheck — so the per-location-radius semantic falls out of the query and the search stays indexed even though the distance varies per row. The in-memory `GridIndex` is _not_ instantiated in postgres mode; the database is the index. A docker-compose overlay (`docker-compose.postgres.yml`) brings up `postgis/postgis:16-3.4` alongside the api; migrations and a one-time seed from `LOCATIONS_FILE` run at app boot. In a real deployment you'd add: read replicas; a Redis cache for shared search results and rate-limit counters; stateless application instances behind a load balancer; and, for shard-level horizontal partitioning of the spatial index, an H3 or S2 cell scheme.
+**Production path (now implemented).** Setting `LOCATIONS_BACKEND=postgres` switches in a `PostgresLocationRepository` and `PostgresLocationIndex` that share a Drizzle-managed `pg.Pool`. The schema lives in `src/db/schema.ts`; the hand-written initial migration in `drizzle/migrations/0000_init.sql` creates the `locations` table with a generated `geom geometry(Point)` column plus the PostGIS extension, and `drizzle/migrations/0001_reach_index.sql` adds a functional GiST index on `ST_Expand(geom, radius)`. `GET /locations/search` runs a two-clause query: an indexable `ST_Expand(geom, radius) && $point` bbox prefilter on top of that functional index, with `ST_DWithin(geom, $point, radius)` as the exact recheck, so the per-location-radius semantic falls out of the query and the search stays indexed even though the distance varies per row. The in-memory `GridIndex` is _not_ instantiated in postgres mode; the database is the index. A docker-compose overlay (`docker-compose.postgres.yml`) brings up `postgis/postgis:16-3.4` alongside the api; migrations and a one-time seed from `LOCATIONS_FILE` run at app boot. In a real deployment you'd add: read replicas; a Redis cache for shared search results and rate-limit counters; stateless application instances behind a load balancer; and, for shard-level horizontal partitioning of the spatial index, an H3 or S2 cell scheme.
 
 ### Search algorithm
 
 The query is: _"return every location whose service-radius disk contains the query point Q"_, i.e.
 every location where `distance(Q, location.coordinates) ≤ location.radius`. This is a
-**per-location-radius point-enclosure** query — it is _not_ a fixed-radius "find all points within R
+**per-location-radius point-enclosure** query. It is _not_ a fixed-radius "find all points within R
 of Q" query. Each location has its own radius, and the condition is the reverse: the location's disk
 must reach Q, not Q's disk must reach the location.
 
@@ -559,12 +559,12 @@ results at once") while coordinates can be large and sparse. That combination is
 **Structure.** The grid maintains the invariant `cellSize = max(radius over all indexed locations)`.
 Each location is bucketed into the cell that contains its centre, identified by the integer cell
 coordinates `(⌊x / cellSize⌋, ⌊y / cellSize⌋)`. The grid is stored as a sparse `Map<string, Location[]>`,
-so the coordinate range has no cost — only occupied cells exist.
+so the coordinate range has no cost; only occupied cells exist.
 
 **Query.** To find all locations whose disk contains Q:
 
 1. Compute Q's cell `(cx, cy)`.
-2. Iterate over the 3×3 block of cells centred on `(cx, cy)` — nine cells.
+2. Iterate over the 3×3 block of cells centred on `(cx, cy)`, nine cells in total.
 3. For each location in those cells, compute the exact Euclidean distance and check
    `distance ≤ location.radius`.
 
@@ -572,7 +572,7 @@ so the coordinate range has no cost — only occupied cells exist.
 centre to Q is at most `location.radius`. Because `location.radius ≤ cellSize` (the invariant), the
 distance from the centre to Q is at most `cellSize`. A centre that is at most `cellSize` away from Q
 must lie in Q's cell or one of the 8 adjacent cells. Therefore, every qualifying location is
-examined — there are no false negatives.
+examined, and there are no false negatives.
 
 **Complexity.** Each query inspects at most 9 cells. If the data is roughly uniform, each cell holds
 approximately `n / (total cells)` locations; in the common case the number of candidates `k` is
@@ -591,14 +591,14 @@ the [Benchmarks](#benchmarks) section.
 **Skew caveats.** Two distributions can erode the grid's per-query constant, and they degrade it
 in different ways:
 
-- **Density skew** — many locations clustered in the same cell. The 9-cell scan still runs, but
+- **Density skew**: many locations clustered in the same cell. The 9-cell scan still runs, but
   the cells themselves are heavy: that cell's contribution to per-query work degrades toward
   O(its population). Mitigations: a hierarchical scheme that subdivides hot cells (quadtree /
   k-d tree), or a per-cell cap that spills overflow into a sibling structure.
-- **Radius skew** — one outlier location with a much larger `radius` than the rest forces
+- **Radius skew**: one outlier location with a much larger `radius` than the rest forces
   `cellSize = max(radius)` upward (the invariant on which the 3×3 scan's correctness depends),
-  which makes every cell across the whole grid coarser. The scan still returns the right answer —
-  the rebuild-on-growth path in `upsert` keeps the invariant intact — but each cell now holds
+  which makes every cell across the whole grid coarser. The scan still returns the right answer, and
+  the rebuild-on-growth path in `upsert` keeps the invariant intact, but each cell now holds
   proportionally more candidates, so _every_ query (not just queries near the outlier) does more
   work. This is the failure mode this specific design is most exposed to. Three concrete
   mitigations, in increasing order of effort:
@@ -628,20 +628,20 @@ Two designs were on the table:
 
 - **Rebuild the index** with a new, larger `cellSize` (the implemented design). The `upsert` method
   detects `radius > cellSize`, collects all existing locations, adds the new one, and calls
-  `bulkLoad` — an O(n) operation on that one write.
+  `bulkLoad`, an O(n) operation on that one write.
 - **Keep an overflow list** alongside the grid for locations whose radius exceeds `cellSize`, and
   scan that list on every query in addition to the 3×3 block.
 
 **Why rebuild won.** The brief is explicit that radii are small ("won't be too big") so the rebuild
 fires rarely or never in practice. Write endpoints are rate-limited to 20 requests per minute,
 capping the worst-case rebuild frequency. A rebuild of even 1 million entries takes tens of
-milliseconds on modern hardware — a one-off write-latency blip, not a steady-state throughput cost.
+milliseconds on modern hardware: a one-off write-latency blip, not a steady-state throughput cost.
 The payoff is a single data structure with one always-true invariant (`cellSize == max radius`),
 which makes `search`, `insert`, and `remove` all special-case-free and trivially testable. The
 overflow-list approach would keep per-query cost lower on a pathological sequence of
 expanding-radius writes, but at the cost of branching logic in every search and two code paths to
 maintain and test. If radii were genuinely unbounded and the overflow list could grow large, that
-trade-off would be worth making — and at that point the right tool would be an R-tree (`rbush`) or
+trade-off would be worth making, and at that point the right tool would be an R-tree (`rbush`) or
 PostGIS `ST_DWithin`.
 
 ### Authentication
@@ -650,8 +650,8 @@ PostGIS `ST_DWithin`.
 configured user list (see `AUTH_USERS`), and returns a signed HS256 JWT containing `{ sub, role }`
 claims with a configurable TTL (default `1h`). Every data endpoint (`/locations/*`) requires a
 valid bearer token in the `Authorization` header; `PUT /locations/{id}` additionally requires the
-token's `role` claim to equal `writer`. The public endpoints — `/auth/token`, `/health`,
-`/openapi.json`, `/docs` — require no token.
+token's `role` claim to equal `writer`. The public endpoints (`/auth/token`, `/health`,
+`/openapi.json`, `/docs`) require no token.
 
 `JWT_SECRET` is required when `NODE_ENV=production`; the server refuses to start without it. In other environments, a documented dev fallback (`dev-insecure-secret-change-me`, exported as the `DEV_JWT_SECRET_FALLBACK` constant) is used and the server logs a `warn` at startup so it's obvious you're not on a real secret.
 Passwords are hashed with scrypt (`node:crypto`), so the credential check is deliberately slow (a
@@ -673,7 +673,7 @@ strategy:
 | -------- | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------ |
 | `write`  | `PUT /locations/{id}` | 20 / min  | Directly specified by the brief                                                                              |
 | `read`   | `GET /locations/*`    | 120 / min | Unbounded read traffic that runs the grid query + sort + serialise is an obvious abuse vector                |
-| `auth`   | `POST /auth/token`    | 10 / min  | Unauthenticated endpoint running a deliberately slow hash compare — a brute-force / CPU-amplification target |
+| `auth`   | `POST /auth/token`    | 10 / min  | Unauthenticated endpoint running a deliberately slow hash compare, a brute-force / CPU-amplification target |
 | `global` | All other routes      | 200 / min | Per-IP fallback                                                                                              |
 
 Authenticated routes are keyed by the token subject (`sub` claim); unauthenticated routes by client
@@ -688,9 +688,9 @@ globally across instances rather than per-process.
 from the response body). Authenticated endpoints (`GET /locations/search`, `GET /locations/{id}`)
 use `Cache-Control: private, no-cache`:
 
-- `private` — a shared cache (CDN, proxy) must not serve this response to a different user or to an
+- `private`: a shared cache (CDN, proxy) must not serve this response to a different user or to an
   unauthenticated request.
-- `no-cache` — "store but always revalidate". Because the ETag changes whenever a `PUT` modifies the
+- `no-cache`: "store but always revalidate". Because the ETag changes whenever a `PUT` modifies the
   index, an unchanged record or search result is validated cheaply with a `304 Not Modified` rather
   than a full response body.
 
@@ -700,22 +700,22 @@ auth at the gateway layer and then mark the downstream responses `public` with `
 
 **In-process cache.** `LocationService.search` uses an optional LRU (`SearchCache`) keyed by
 `<dataVersion>:<x>:<y>`. The version counter increments on every `upsert`, so cached entries for
-stale data are never served — no explicit invalidation is needed. `SEARCH_CACHE_SIZE` controls the
+stale data are never served, so no explicit invalidation is needed. `SEARCH_CACHE_SIZE` controls the
 entry limit; set it to `0` to disable. In a multi-instance deployment this would be replaced by a
 shared Redis cache. The spatial index itself also functions as a query-optimised projection of the
-data — loading it once at boot means zero per-request I/O.
+data, so loading it once at boot means zero per-request I/O.
 
 ### Error handling
 
 All error responses conform to **RFC 7807 / 9457 Problem Details**. Every error body contains:
 
-- `type` — a stable relative URI identifying the problem type (e.g. `/problems/bad-request`)
-- `title` — a human-readable summary
-- `status` — the HTTP status code
-- `detail` — a description of the specific occurrence (when applicable)
-- `instance` — the request URL
+- `type`: a stable relative URI identifying the problem type (e.g. `/problems/bad-request`)
+- `title`: a human-readable summary
+- `status`: the HTTP status code
+- `detail`: a description of the specific occurrence (when applicable)
+- `instance`: the request URL
 
-Validation errors include an `errors` extension member — an array of `{ field, message }` objects —
+Validation errors include an `errors` extension member, an array of `{ field, message }` objects,
 so clients can map errors back to specific request fields without parsing the `detail` string.
 
 The response content type is `application/problem+json` throughout, including rate-limit (429) and
@@ -729,7 +729,7 @@ request receives a unique id that appears in all log lines for that request and 
 field of 500 error responses, making incident correlation straightforward. In development, logs are
 pretty-printed via `pino-pretty`; in production they are emitted as structured JSON for ingestion by
 a log aggregator. In a full production deployment you would add Prometheus metrics (request rate,
-latency percentiles, error rate) and OpenTelemetry distributed tracing — these are out of scope for
+latency percentiles, error rate) and OpenTelemetry distributed tracing. These are out of scope for
 this exercise.
 
 ### Testing
@@ -741,7 +741,7 @@ The test suite uses Vitest and is split into unit and integration tests.
 `toDetailView`); `GridIndex` (correct results on a worked example, boundary equality, sparse
 coordinates, upsert reindex, remove, and the radius-growth rebuild); `LinearScanIndex`; a
 **randomised cross-check** (`test/unit/grid-vs-linear.test.ts`) that generates random datasets
-and random queries and asserts `GridIndex` and `LinearScanIndex` always agree — including after a
+and random queries and asserts `GridIndex` and `LinearScanIndex` always agree, including after a
 mixed sequence of upserts and removes that triggers a rebuild; `LocationService` (search,
 upsert, cache invalidation); `SearchCache` (LRU eviction, zero-capacity disabled mode);
 `InMemoryLocationRepository`; the JSON loader (skip-invalid-warn, fail-fast threshold);
@@ -791,7 +791,7 @@ state predictable.
 .
 ├── src/
 │   ├── auth/                    # Password hashing (scrypt) + user-record helpers
-│   ├── cache/                   # SearchCache — LRU keyed by data-version
+│   ├── cache/                   # SearchCache: LRU keyed by data-version
 │   ├── db/                      # Drizzle schema + pg.Pool connection factory (postgres mode)
 │   ├── domain/                  # Pure domain types and functions (coordinates, location views)
 │   ├── http/
@@ -801,13 +801,13 @@ state predictable.
 │   ├── plugins/                 # Fastify plugins: auth (JWT), rate-limit, http-cache, swagger
 │   ├── repository/              # LocationRepository interface + InMemory + Postgres impls + JSON loader
 │   ├── schemas/                 # Shared raw-location wire schema + AJV format registrations
-│   ├── service/                 # LocationService — orchestrates repo, index, and cache
+│   ├── service/                 # LocationService: orchestrates repo, index, and cache
 │   ├── spatial/                 # LocationIndex + GridIndex / LinearScanIndex / PostgresLocationIndex
 │   ├── types/                   # Fastify type augmentations
-│   ├── app.ts                   # App factory — forks on LOCATIONS_BACKEND, registers plugins + routes
-│   ├── config.ts                # loadConfig — reads env, validates, returns a typed Config
+│   ├── app.ts                   # App factory: forks on LOCATIONS_BACKEND, registers plugins + routes
+│   ├── config.ts                # loadConfig: reads env, validates, returns a typed Config
 │   ├── logger.ts                # Pino logger factory
-│   └── server.ts                # Entry point — loads config, builds app, starts listening
+│   └── server.ts                # Entry point: loads config, builds app, starts listening
 ├── drizzle/migrations/          # Hand-written SQL + drizzle-kit metadata
 │   ├── 0000_init.sql            # locations table + GENERATED geom + PostGIS extension
 │   └── 0001_reach_index.sql     # Functional GiST on ST_Expand(geom, radius) (see Benchmarks)
@@ -826,7 +826,7 @@ state predictable.
 │   ├── locations.json           # 5-row worked-example fixture from the spec
 │   └── locations_big.json       # 10 000-row synthetic dataset
 ├── docs/openapi.json            # Committed OpenAPI snapshot (regen via scripts/generate-openapi.ts)
-├── .github/workflows/ci.yml     # GitHub Actions — lint, format, typecheck, openapi check, tests
+├── .github/workflows/ci.yml     # GitHub Actions: lint, format, typecheck, openapi check, tests
 ├── Dockerfile                   # Multi-stage build
 ├── docker-compose.yml           # Memory mode
 ├── docker-compose.postgres.yml  # Overlay adding PostGIS for postgres mode

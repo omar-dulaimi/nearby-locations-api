@@ -41,7 +41,7 @@ export async function buildApp(
 
   if (config.jwtSecret === DEV_JWT_SECRET_FALLBACK) {
     app.log.warn(
-      'JWT_SECRET is unset — using the insecure dev fallback secret. Set JWT_SECRET in your environment for any non-local use.',
+      'JWT_SECRET is unset, so the insecure dev fallback secret is in use. Set JWT_SECRET in your environment for any non-local use.',
     );
   }
 
