@@ -538,7 +538,7 @@ The brief's "high data volume / high load" requirement is addressed by the combi
 
 **Memory ceiling.** Each location record is a small flat object (UUID string, two integers for
 coordinates, an integer radius, a few short strings for name/type/hours/image). A rough estimate is
-150–300 bytes of heap per record, so 1 million records occupy roughly 150–300 MB, well within a
+150 to 300 bytes of heap per record, so 1 million records occupy roughly 150 to 300 MB, well within a
 standard Node heap. Beyond a few million records it would be appropriate to move to an external
 datastore; the `LocationRepository` interface makes that a single-class change.
 
@@ -552,7 +552,7 @@ every location where `distance(Q, location.coordinates) ≤ location.radius`. Th
 of Q" query. Each location has its own radius, and the condition is the reverse: the location's disk
 must reach Q, not Q's disk must reach the location.
 
-The brief states that radii are intentionally small ("not too big — to avoid returning lots of
+The brief states that radii are intentionally small ("not too big, to avoid returning lots of
 results at once") while coordinates can be large and sparse. That combination is ideal for a
 **uniform grid index** (`src/spatial/grid-index.ts`).
 
